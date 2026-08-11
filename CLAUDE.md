@@ -42,6 +42,9 @@ spec lives in `VOLTAX — MASTER CLAUDE CODE BUILD PROMPT.md`.
 - `lib/deriv` — server-only Deriv WS integration (single surface, safe fallback).
 - `lib/supabase` — browser/server clients; schema in `supabase/migrations`.
 - `lib/notifications` — provider abstraction (in-app/browser/Telegram).
+- `lib/ai` — explanation service: deterministic templater (always) + Claude
+  provider (on-demand, `AI_API_KEY`). Explains decisions from verified facts only.
+- `lib/trading/paper.ts` — paper-trading domain (open/mark/resolve/close, P/L).
 - `lib/demo` — labelled synthetic data → real engine/backtest output for the UI.
 - `app/(app)` — dashboard, radar, signals(+detail), markets, performance,
   backtesting, methodology, system-health, settings, live/paper/history/alerts.

@@ -6,6 +6,8 @@ import { DirectionBadge, StatusBadge, BiasBadge, VolatilityBadge, GLOSSARY } fro
 import { CandleChart } from '@/components/candle-chart';
 import { OpenTradeButton } from '@/components/paper/open-trade-button';
 import type { TradeableSignal } from '@/components/paper/types';
+import { AiExplanation } from '@/components/ai-explanation';
+import { explainSignal, isAiConfigured } from '@/lib/ai/explain';
 import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
@@ -22,9 +24,6 @@ export default async function SignalDetailPage({ params }: { params: { symbol: s
         ...e.risk.takeProfits.map((t) => ({ price: t.price, label: `TP${t.level}`, tone: 'bull' as const })),
       ]
     : [];
-
-  const supporting = e.reasons.filter((r) => r.polarity === 'supporting');
-  const cautionary = e.reasons.filter((r) => r.polarity === 'cautionary');
 
   const tp1 = e.risk?.takeProfits[0]?.price;
   const tradeable: TradeableSignal | null =
@@ -155,19 +154,13 @@ export default async function SignalDetailPage({ params }: { params: { symbol: s
         </TfCard>
       </section>
 
-      {/* Why (spec §24, §54) */}
+      {/* Why — AI/deterministic explanation (spec §24, §33, §54) */}
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <Card>
-          <CardTitle>Why VoltaX generated this read</CardTitle>
-          <ul className="space-y-1.5 text-sm">
-            {supporting.map((r, i) => (
-              <li key={i} className="flex gap-2"><span className="text-bull">✓</span><span>{r.text}</span></li>
-            ))}
-            {cautionary.map((r, i) => (
-              <li key={`c${i}`} className="flex gap-2"><span className="text-warn">!</span><span className="text-muted">{r.text}</span></li>
-            ))}
-          </ul>
-        </Card>
+        <AiExplanation
+          initial={explainSignal(e)}
+          symbol={e.instrumentSymbol}
+          aiEnabled={isAiConfigured()}
+        />
 
         {/* Backtest context (spec §24) */}
         <Card>
