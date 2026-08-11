@@ -55,7 +55,11 @@ export interface RiskConfig {
  */
 export const DEFAULT_STRATEGY: StrategyConfig = {
   version: METHODOLOGY_VERSION,
-  minimumReliability: 55,
+  // reliabilityScore is the conservative (Wilson lower-bound) estimate of the
+  // historical TP1-hit rate. At the ~2:1 R:R this engine targets, breakeven is a
+  // ~33% hit rate, so a conservative estimate of ~45 already implies solidly
+  // positive expectancy. Tunable + versioned; validated by backtests (spec §61).
+  minimumReliability: 45,
   minimumRiskReward: 1.8,
   minimumOpportunityScore: 60,
   maxFeedStalenessMs: 15_000,

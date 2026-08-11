@@ -50,7 +50,16 @@ function asOf(candles: Candle[], tf: Timeframe, ts: number): Candle[] {
 }
 
 export function runBacktest(input: BacktestInput): BacktestResult {
-  const config = input.config ?? DEFAULT_STRATEGY;
+  const baseConfig = input.config ?? DEFAULT_STRATEGY;
+  // The backtester MEASURES the mechanical setup's performance; it must not gate
+  // on the very statistics it is producing (that would be circular and never
+  // bootstrap). We disable the reliability/opportunity thresholds here, keeping
+  // all structural + risk gates intact. Live evaluation still applies them.
+  const config: StrategyConfig = {
+    ...baseConfig,
+    minimumReliability: 0,
+    minimumOpportunityScore: 0,
+  };
   const decisionTf = input.decisionTimeframe ?? '5m';
   const warmup = input.warmup ?? 40;
   const equity = input.accountEquity ?? 10_000;

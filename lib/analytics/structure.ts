@@ -13,7 +13,7 @@ import type {
   Timeframe,
 } from '@/lib/types';
 import { detectSwings, lastSwings } from './swings';
-import { classifyVolatility } from './volatility';
+import { classifyVolatility, latestAtr } from './volatility';
 import { detectZones } from './zones';
 
 export interface StructureOptions {
@@ -24,6 +24,43 @@ export interface StructureOptions {
 }
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
+/** Least-squares slope of closes per bar. */
+function closeSlope(candles: Candle[], window: number): number {
+  const n = Math.min(window, candles.length);
+  if (n < 3) return 0;
+  const start = candles.length - n;
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let sxy = 0;
+  for (let i = 0; i < n; i++) {
+    const x = i;
+    const y = candles[start + i]!.close;
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    sxy += x * y;
+  }
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return 0;
+  return (n * sxy - sx * sy) / denom;
+}
+
+/**
+ * Slope-based directional bias, used ONLY as a tiebreaker when swing/event
+ * structure is inconclusive (e.g. a strong monotonic trend that forms no
+ * fractal pivots). Normalised by ATR so it is scale-free.
+ */
+function slopeBias(candles: Candle[], atrPeriod: number): Bias {
+  const atrVal = latestAtr(candles, atrPeriod);
+  if (!atrVal || atrVal <= 0) return 'neutral';
+  const slope = closeSlope(candles, Math.max(atrPeriod * 2, 20));
+  const norm = slope / atrVal; // slope in ATRs per bar
+  if (norm > 0.08) return 'bullish';
+  if (norm < -0.08) return 'bearish';
+  return 'neutral';
+}
 
 /** Trend from the last two swing highs and lows (HH+HL / LH+LL). */
 function trendFromSwings(candles: Candle[], lookback: number): Bias {
@@ -118,7 +155,11 @@ export function analyzeStructure(
   const swings = detectSwings(candles, lookback);
   const { events, trend: eventTrend } = detectStructureEvents(candles, lookback);
   const swingTrend = trendFromSwings(candles, lookback);
-  const trend: Bias = events.length > 0 ? eventTrend : swingTrend;
+  let trend: Bias = events.length > 0 ? eventTrend : swingTrend;
+  // Tiebreaker: when swing/event structure is inconclusive, fall back to a
+  // slope filter so a clean monotonic trend (no fractal pivots) still reads
+  // directionally instead of neutral.
+  if (trend === 'neutral') trend = slopeBias(candles, atrPeriod);
 
   const volatility = classifyVolatility(candles, atrPeriod, abnormalMultiple);
   const regime = classifyRegime(trend, volatility, events.length);

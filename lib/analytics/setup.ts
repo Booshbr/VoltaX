@@ -87,7 +87,7 @@ export function analyzeSetup(
 
   let status: SetupStatus;
   if (!aligned) status = 'none';
-  else if (nearZone && alignedEvent && quality >= 0.6) status = 'qualified';
+  else if ((nearZone || alignedEvent) && quality >= 0.55) status = 'qualified';
   else if (nearZone || alignedEvent) status = 'forming';
   else status = 'none';
 

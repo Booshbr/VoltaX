@@ -278,11 +278,12 @@ export function evaluate(input: EngineInput): EngineEvaluation {
     config.scoringWeights,
   );
 
-  // Qualification — every mandatory condition must hold (spec §61).
+  // Qualification — every mandatory condition must hold (spec §61). Precision
+  // (1M) is a REFINEMENT, not a mandatory gate: it optimises entry/stop when
+  // present but never manufactures a trade on its own (spec §3, §4 Mode D).
   const gates: Array<[boolean, string]> = [
     [setup.status === 'qualified', 'Setup not qualified'],
     [entry.confirmed, '5M entry not confirmed'],
-    [precision.triggered, '1M precision not triggered'],
     [!risk.rejected, `Risk rejected: ${risk.rejectionReasons.join('; ')}`],
     [risk.riskReward >= config.minimumRiskReward, 'R:R below minimum'],
     [reliability.score >= config.minimumReliability, 'Reliability below minimum'],
@@ -313,7 +314,7 @@ export function evaluate(input: EngineInput): EngineEvaluation {
       instrumentSymbol: input.instrument.symbol,
       instrumentFamily: input.instrument.family,
       direction: htfDir,
-      mode: 'precision',
+      mode: precision.triggered ? 'precision' : 'entry',
       status: 'qualified',
       entryPrice,
       stopLoss: stop,

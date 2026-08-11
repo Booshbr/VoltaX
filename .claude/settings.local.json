@@ -5,7 +5,9 @@
       "Bash(npm install *)",
       "Bash(npx vitest *)",
       "Bash(git add *)",
-      "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m ' *)"
+      "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m ' *)",
+      "Bash(node -e \"console.log\\(typeof WebSocket\\)\")",
+      "Bash(npx next *)"
     ]
   }
 }
