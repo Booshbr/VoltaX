@@ -11,13 +11,14 @@ export const dynamic = 'force-dynamic';
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { redirect?: string };
+  searchParams: Promise<{ redirect?: string }>;
 }) {
+  const { redirect: redirectTo } = await searchParams;
   const configured = isSupabaseConfigured();
   // If already signed in, go straight to the app.
   if (configured) {
     const user = await getCurrentUser();
-    if (user) redirect(searchParams.redirect || '/');
+    if (user) redirect(redirectTo || '/');
   }
 
   return (
@@ -32,7 +33,7 @@ export default async function LoginPage({
           {configured ? (
             <>
               <h1 className="mb-4 text-lg font-semibold text-fg">Sign in</h1>
-              <LoginForm redirectTo={searchParams.redirect || '/'} />
+              <LoginForm redirectTo={redirectTo || '/'} />
             </>
           ) : (
             <div className="space-y-2">

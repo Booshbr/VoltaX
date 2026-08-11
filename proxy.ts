@@ -1,9 +1,10 @@
 import { type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
-/** Root middleware: refreshes Supabase sessions and gates protected routes.
- * No-ops entirely when Supabase is not configured (demo mode). */
-export async function middleware(request: NextRequest) {
+/** Next.js 16 proxy (formerly "middleware"): refreshes Supabase sessions and
+ * gates protected routes. No-ops entirely when Supabase is not configured
+ * (demo mode). */
+export default async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 

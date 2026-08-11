@@ -16,7 +16,17 @@
       "Skill(claude-api:*)",
       "Bash(curl -s http://localhost:3000/signals/R_75)",
       "Bash(curl -s http://localhost:3000/history)",
-      "Bash(curl -s http://localhost:3000/settings)"
+      "Bash(curl -s http://localhost:3000/settings)",
+      "Bash(node -e \"const p=require\\('./node_modules/next/package.json'\\); console.log\\('next', p.version\\)\")",
+      "Bash(node -e \"const r=require\\('./node_modules/react/package.json'\\); console.log\\('react', r.version\\)\")",
+      "Bash(node -e \"const d=require\\('./node_modules/react-dom/package.json'\\); console.log\\('react-dom', d.version\\)\")",
+      "Bash(curl -s -o /dev/null -w \"  HTTP %{http_code} in %{time_total}s\\\\n\" --max-time 40 http://localhost:3000/)",
+      "Bash(curl -s --max-time 40 http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"  HTTP %{http_code}\\\\n\" --max-time 40 http://localhost:3000/signals/R_75)",
+      "Bash(node -e \"console.log\\('react', require\\('./node_modules/react/package.json'\\).version\\); console.log\\('react-dom', require\\('./node_modules/react-dom/package.json'\\).version\\); console.log\\('eslint', require\\('./node_modules/eslint/package.json'\\).version\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(echo \"\\(exit $?\\)\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3100 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; \"stopped PID $_\" })"
     ]
   }
 }

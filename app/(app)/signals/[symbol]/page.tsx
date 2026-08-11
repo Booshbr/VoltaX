@@ -14,8 +14,13 @@ import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/for
 
 export const dynamic = 'force-dynamic';
 
-export default async function SignalDetailPage({ params }: { params: { symbol: string } }) {
-  const detail = await getMarketDetail(params.symbol);
+export default async function SignalDetailPage({
+  params,
+}: {
+  params: Promise<{ symbol: string }>;
+}) {
+  const { symbol } = await params;
+  const detail = await getMarketDetail(symbol);
   if (!detail) notFound();
   const { evaluation: e, backtest, recentCandles, source } = detail;
 
