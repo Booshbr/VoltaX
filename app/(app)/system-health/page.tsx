@@ -15,8 +15,8 @@ export default function SystemHealthPage() {
 
   const components: { label: string; state: State; detail: string }[] = [
     { label: 'Signal engine', state: 'healthy', detail: 'Deterministic engine operational' },
-    { label: 'Market data feed', state: deriv.hasToken ? 'healthy' : 'disabled', detail: deriv.hasToken ? 'Deriv feed configured' : 'Demo generator (no live feed)' },
-    { label: 'Deriv connection', state: deriv.hasToken ? 'healthy' : 'disabled', detail: `${deriv.configured ? 'App id set' : 'Not configured'} · token ${redactToken(deriv.config?.token)}` },
+    { label: 'Market data feed', state: deriv.configured ? 'healthy' : 'disabled', detail: deriv.configured ? 'Deriv public market data' : 'Demo generator (no live feed)' },
+    { label: 'Deriv connection', state: deriv.configured ? 'healthy' : 'disabled', detail: `${deriv.configured ? 'Public market data available' : 'Not configured'} · account token ${deriv.hasToken ? redactToken(deriv.config?.token) : 'none (paper only)'}` },
     { label: 'Database (Supabase)', state: supabase ? 'healthy' : 'disabled', detail: supabase ? 'Configured' : 'Not configured — persistence disabled' },
     { label: 'Telegram alerts', state: telegram ? 'healthy' : 'disabled', detail: telegram ? 'Configured' : 'Not configured (optional)' },
     { label: 'AI explanations', state: ai ? 'healthy' : 'disabled', detail: ai ? 'Provider key set' : 'Not configured (optional)' },

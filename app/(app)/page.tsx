@@ -1,12 +1,15 @@
-import { getDemoMarketView } from '@/lib/demo/dataset';
-import { PageHeader, Disclaimer } from '@/components/page';
+import { getMarketView } from '@/lib/market/source';
+import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat, Dot } from '@/components/ui';
 import { SignalCard } from '@/components/signal-card';
 import { formatMoney } from '@/lib/utils/format';
 
-export default function DashboardPage() {
-  const view = getDemoMarketView();
-  const { summary, evaluations, feed } = view;
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardPage() {
+  const view = await getMarketView();
+  const { summary, evaluations, feed, source } = view;
+  const isLive = source === 'live';
 
   const qualified = evaluations.filter((e) => e.qualified);
   const top = (qualified.length ? qualified : evaluations).slice(0, 3);
@@ -16,6 +19,7 @@ export default function DashboardPage() {
       <PageHeader
         title="Dashboard"
         subtitle="What the market is doing, the best current opportunities, and system health."
+        actions={<SourceBadge source={source} />}
       />
 
       {/* Market overview (spec §22) */}
@@ -64,10 +68,14 @@ export default function DashboardPage() {
             <HealthRow label="Signal engine" tone="bull" text="Operational (deterministic)" />
             <HealthRow
               label="Data feed"
-              tone={feed.quality === 'healthy' ? 'bull' : 'warn'}
-              text={`${feed.quality} — demo generator`}
+              tone={feed.quality === 'healthy' ? 'bull' : feed.quality === 'stale' ? 'bear' : 'warn'}
+              text={`${feed.quality} — ${isLive ? 'Deriv live feed' : 'demo generator'}`}
             />
-            <HealthRow label="Deriv connection" tone="muted" text="Not configured (demo)" />
+            <HealthRow
+              label="Deriv connection"
+              tone={isLive ? 'bull' : 'muted'}
+              text={isLive ? 'Connected (public market data)' : 'Not connected (demo)'}
+            />
             <HealthRow label="Supabase" tone="muted" text="Not configured (demo)" />
           </ul>
         </Card>

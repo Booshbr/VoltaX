@@ -9,6 +9,8 @@ import type { Candle, Instrument, Timeframe } from '@/lib/types';
 import { validCandles, dedupeAndSort } from '@/lib/market-data/candles';
 import { getDerivConfig, redactToken, type DerivConfig } from './config';
 import { toInstruments, toCandles } from './mappers';
+import { classifyFamily } from '@/lib/config/families';
+import { KNOWN_SYNTHETICS } from './symbols';
 import {
   DERIV_GRANULARITY,
   type DerivActiveSymbolsResponse,
@@ -101,14 +103,58 @@ export class DerivClient {
     });
   }
 
-  /** Discover the synthetic-index instrument universe (spec §7 dynamic discovery). */
+  /** Discover the synthetic-index instrument universe (spec §7 dynamic discovery).
+   * Falls back to a curated, verified list when the provider returns none. */
   async getInstruments(): Promise<Instrument[]> {
     const res = await this.send<DerivActiveSymbolsResponse>({
       active_symbols: 'brief',
       product_type: 'basic',
     });
     if (res.error) throw new Error(`Deriv active_symbols: ${res.error.message}`);
-    return toInstruments(res.active_symbols ?? []);
+    const discovered = toInstruments(res.active_symbols ?? []);
+    if (discovered.length > 0) return discovered;
+    return KNOWN_SYNTHETICS.map((k) => ({
+      symbol: k.symbol,
+      displayName: k.displayName,
+      family: classifyFamily(k.symbol, k.displayName),
+      pip: 0.01,
+      active: true,
+    }));
+  }
+
+  /**
+   * Fetch candles for several timeframes of one symbol in parallel, returning the
+   * normalised series per timeframe plus the instrument's price digits (pip_size).
+   */
+  async getCandleSet(
+    symbol: string,
+    timeframes: Timeframe[],
+    count = 300,
+  ): Promise<{ candles: Partial<Record<Timeframe, Candle[]>>; digits: number }> {
+    const results = await Promise.all(
+      timeframes.map(async (tf) => {
+        const res = await this.send<DerivCandlesResponse>({
+          ticks_history: symbol,
+          style: 'candles',
+          granularity: DERIV_GRANULARITY[tf],
+          count,
+          end: 'latest',
+        });
+        if (res.error) throw new Error(`Deriv ticks_history ${symbol}/${tf}: ${res.error.message}`);
+        return {
+          tf,
+          candles: dedupeAndSort(validCandles(toCandles(res.candles ?? []))),
+          digits: res.pip_size ?? 2,
+        };
+      }),
+    );
+    const candles: Partial<Record<Timeframe, Candle[]>> = {};
+    let digits = 2;
+    for (const r of results) {
+      candles[r.tf] = r.candles;
+      digits = r.digits;
+    }
+    return { candles, digits };
   }
 
   /** Fetch recent historical candles for a symbol/timeframe. */

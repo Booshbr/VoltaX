@@ -1,19 +1,25 @@
-import { getDemoPerformance } from '@/lib/demo/dataset';
-import { PageHeader, Disclaimer } from '@/components/page';
+import { getPerformance } from '@/lib/market/source';
+import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Badge } from '@/components/ui';
 import { METHODOLOGY_VERSION } from '@/lib/config/strategy';
 import { formatPercent, titleCase } from '@/lib/utils/format';
 
 export const metadata = { title: 'Backtesting — VoltaX' };
+export const dynamic = 'force-dynamic';
 
-export default function BacktestingPage() {
-  const perf = getDemoPerformance();
+export default async function BacktestingPage() {
+  const perf = await getPerformance();
   return (
     <>
       <PageHeader
         title="Backtesting"
         subtitle="Event-driven replay through the same engine used live — with look-ahead guards."
-        actions={<Badge tone="accent">{METHODOLOGY_VERSION}</Badge>}
+        actions={
+          <div className="flex items-center gap-2">
+            <SourceBadge source={perf.source} />
+            <Badge tone="accent">{METHODOLOGY_VERSION}</Badge>
+          </div>
+        }
       />
 
       <Card className="mb-4 border-accent/30 bg-accent/5">
@@ -26,7 +32,7 @@ export default function BacktestingPage() {
       </Card>
 
       <Card>
-        <CardTitle hint="Per instrument, demo data">Runs</CardTitle>
+        <CardTitle hint="Per instrument">Runs</CardTitle>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>

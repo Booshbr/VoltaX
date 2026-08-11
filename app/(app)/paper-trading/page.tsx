@@ -1,13 +1,14 @@
-import { getDemoMarketView } from '@/lib/demo/dataset';
-import { PageHeader, Disclaimer } from '@/components/page';
+import { getMarketView } from '@/lib/market/source';
+import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat, Badge } from '@/components/ui';
 import { SignalCard } from '@/components/signal-card';
 import { formatMoney } from '@/lib/utils/format';
 
 export const metadata = { title: 'Paper Trading — VoltaX' };
+export const dynamic = 'force-dynamic';
 
-export default function PaperTradingPage() {
-  const { evaluations, accountEquity } = getDemoMarketView();
+export default async function PaperTradingPage() {
+  const { evaluations, accountEquity, source } = await getMarketView();
   const qualified = evaluations.filter((e) => e.qualified);
 
   return (
@@ -15,7 +16,12 @@ export default function PaperTradingPage() {
       <PageHeader
         title="Paper Trading"
         subtitle="Simulated execution with the same signals, sizing and risk as live."
-        actions={<Badge tone="accent">PAPER</Badge>}
+        actions={
+          <div className="flex items-center gap-2">
+            <SourceBadge source={source} />
+            <Badge tone="accent">PAPER</Badge>
+          </div>
+        }
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

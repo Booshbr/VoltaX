@@ -1,11 +1,12 @@
-import { getDemoMarketView } from '@/lib/demo/dataset';
-import { PageHeader } from '@/components/page';
+import { getMarketView } from '@/lib/market/source';
+import { PageHeader, SourceBadge } from '@/components/page';
 import { SignalCard } from '@/components/signal-card';
 
 export const metadata = { title: 'Signals — VoltaX' };
+export const dynamic = 'force-dynamic';
 
-export default function SignalsPage() {
-  const { evaluations } = getDemoMarketView();
+export default async function SignalsPage() {
+  const { evaluations, source } = await getMarketView();
   const active = evaluations.filter((e) => e.direction !== null);
 
   return (
@@ -13,6 +14,7 @@ export default function SignalsPage() {
       <PageHeader
         title="Signals"
         subtitle="Qualified and developing setups across the scanned universe."
+        actions={<SourceBadge source={source} />}
       />
       {active.length === 0 ? (
         <p className="text-sm text-muted">No directional setups right now.</p>

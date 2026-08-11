@@ -26,11 +26,9 @@ const NAV: { href: string; label: string; group?: string }[] = [
 export function AppShell({
   children,
   tradingMode = 'paper',
-  isDemo = true,
 }: {
   children: React.ReactNode;
   tradingMode?: 'paper' | 'live';
-  isDemo?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -91,11 +89,7 @@ export function AppShell({
             >
               ☰
             </button>
-            {isDemo ? (
-              <span className="rounded-md border border-warn/40 bg-warn/10 px-2 py-0.5 text-xs font-medium text-warn">
-                Demo data — no live Deriv feed configured
-              </span>
-            ) : null}
+            <span className="text-xs text-muted">Synthetic indices · data source shown per page</span>
           </div>
           <div className="flex items-center gap-3">
             <ModeIndicator mode={tradingMode} />

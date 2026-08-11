@@ -31,6 +31,8 @@ export interface DerivCandle {
 
 export interface DerivCandlesResponse {
   candles?: DerivCandle[];
+  /** Number of decimal digits for the instrument's price. */
+  pip_size?: number;
   error?: DerivError;
 }
 

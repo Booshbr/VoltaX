@@ -1,17 +1,22 @@
-import { getDemoPerformance } from '@/lib/demo/dataset';
-import { PageHeader, Disclaimer } from '@/components/page';
+import { getPerformance } from '@/lib/market/source';
+import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat } from '@/components/ui';
 import { formatPercent, titleCase } from '@/lib/utils/format';
 
 export const metadata = { title: 'Performance — VoltaX' };
+export const dynamic = 'force-dynamic';
 
-export default function PerformancePage() {
-  const perf = getDemoPerformance();
+export default async function PerformancePage() {
+  const perf = await getPerformance();
   const t = perf.totals;
 
   return (
     <>
-      <PageHeader title="Performance" subtitle="Backtested performance across the demo universe (look-ahead safe)." />
+      <PageHeader
+        title="Performance"
+        subtitle="Backtested performance across the scanned universe (look-ahead safe)."
+        actions={<SourceBadge source={perf.source} />}
+      />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Card><Stat label="Total trades" value={t.trades} /></Card>

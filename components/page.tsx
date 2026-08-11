@@ -1,5 +1,14 @@
 import type { ReactNode } from 'react';
-import { Card } from './ui';
+import { Card, Badge } from './ui';
+
+/** Indicates whether the page is showing live Deriv data or labelled demo data. */
+export function SourceBadge({ source }: { source: 'live' | 'demo' }) {
+  return source === 'live' ? (
+    <Badge tone="bull">● Live Deriv data</Badge>
+  ) : (
+    <Badge tone="warn">Demo data</Badge>
+  );
+}
 
 export function PageHeader({
   title,

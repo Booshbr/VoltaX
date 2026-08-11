@@ -1,20 +1,17 @@
 import { notFound } from 'next/navigation';
-import { getDemoDetail } from '@/lib/demo/dataset';
-import { DEMO_INSTRUMENTS } from '@/lib/demo/generator';
-import { PageHeader, Disclaimer } from '@/components/page';
+import { getMarketDetail } from '@/lib/market/source';
+import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat, Badge, ScoreBar, InfoTip } from '@/components/ui';
 import { DirectionBadge, StatusBadge, BiasBadge, VolatilityBadge, GLOSSARY } from '@/components/domain';
 import { CandleChart } from '@/components/candle-chart';
 import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
 
-export function generateStaticParams() {
-  return DEMO_INSTRUMENTS.map((d) => ({ symbol: d.symbol }));
-}
+export const dynamic = 'force-dynamic';
 
-export default function SignalDetailPage({ params }: { params: { symbol: string } }) {
-  const detail = getDemoDetail(params.symbol);
+export default async function SignalDetailPage({ params }: { params: { symbol: string } }) {
+  const detail = await getMarketDetail(params.symbol);
   if (!detail) notFound();
-  const { evaluation: e, backtest, recentCandles } = detail;
+  const { evaluation: e, backtest, recentCandles, source } = detail;
 
   const levels = e.risk
     ? [
@@ -34,6 +31,7 @@ export default function SignalDetailPage({ params }: { params: { symbol: string 
         subtitle={`${titleCase(e.family)} Indices · methodology ${e.methodologyVersion}`}
         actions={
           <div className="flex items-center gap-2">
+            <SourceBadge source={source} />
             <DirectionBadge direction={e.direction} />
             <StatusBadge status={e.status} />
           </div>

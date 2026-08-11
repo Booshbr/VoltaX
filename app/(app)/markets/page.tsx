@@ -1,17 +1,22 @@
 import Link from 'next/link';
-import { getDemoMarketView } from '@/lib/demo/dataset';
-import { PageHeader } from '@/components/page';
+import { getMarketView } from '@/lib/market/source';
+import { PageHeader, SourceBadge } from '@/components/page';
 import { Card } from '@/components/ui';
 import { BiasBadge, VolatilityBadge } from '@/components/domain';
 import { titleCase } from '@/lib/utils/format';
 
 export const metadata = { title: 'Markets — VoltaX' };
+export const dynamic = 'force-dynamic';
 
-export default function MarketsPage() {
-  const { evaluations } = getDemoMarketView();
+export default async function MarketsPage() {
+  const { evaluations, source } = await getMarketView();
   return (
     <>
-      <PageHeader title="Markets" subtitle="Every scanned instrument and its current higher-timeframe read." />
+      <PageHeader
+        title="Markets"
+        subtitle="Every scanned instrument and its current higher-timeframe read."
+        actions={<SourceBadge source={source} />}
+      />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {evaluations.map((e) => (
           <Link key={e.instrumentSymbol} href={`/signals/${e.instrumentSymbol}`}>
