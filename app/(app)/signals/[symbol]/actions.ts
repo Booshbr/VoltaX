@@ -8,9 +8,18 @@
 import { getMarketDetail } from '@/lib/market/source';
 import { explainSignalAI } from '@/lib/ai/explain';
 import type { SignalExplanation } from '@/lib/ai/types';
+import { persistSignal, type PersistResult } from '@/lib/supabase/repositories/signals';
 
 export async function generateAiExplanation(symbol: string): Promise<SignalExplanation | null> {
   const detail = await getMarketDetail(symbol);
   if (!detail) return null;
   return explainSignalAI(detail.evaluation);
+}
+
+/** Persist the current read to signal history (spec §27). Requires Supabase +
+ * an authenticated user; returns a structured result the client renders. */
+export async function saveSignalToHistory(symbol: string): Promise<PersistResult> {
+  const detail = await getMarketDetail(symbol);
+  if (!detail) return { error: 'Signal not found.' };
+  return persistSignal(detail.evaluation);
 }

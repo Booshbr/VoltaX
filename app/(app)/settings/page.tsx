@@ -1,11 +1,17 @@
 import { PageHeader, ConfigNotice } from '@/components/page';
-import { Card, CardTitle } from '@/components/ui';
+import { Card, CardTitle, Badge } from '@/components/ui';
 import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { getCurrentUser } from '@/lib/supabase/server';
+import { SignOutButton } from '@/components/sign-out-button';
 
 export const metadata = { title: 'Settings — VoltaX' };
+export const dynamic = 'force-dynamic';
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
   const r = DEFAULT_STRATEGY.risk;
+  const supabaseOn = isSupabaseConfigured();
+  const user = supabaseOn ? await getCurrentUser() : null;
   return (
     <>
       <PageHeader title="Settings" subtitle="Trading, signals, notifications and appearance." />
@@ -49,10 +55,23 @@ export default function SettingsPage() {
 
         <Card>
           <CardTitle>Account</CardTitle>
-          <p className="text-sm text-muted">
-            Single-user deployment. Login / logout / password reset activate once
-            Supabase Auth is configured.
-          </p>
+          {supabaseOn ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-fg">{user?.email ?? 'Signed in'}</div>
+                  <div className="text-xs text-muted">Supabase Auth active</div>
+                </div>
+                <Badge tone="bull">Authenticated</Badge>
+              </div>
+              <SignOutButton />
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              Single-user deployment. Login / logout / password reset activate once
+              Supabase Auth is configured (see docs/SETUP.md).
+            </p>
+          )}
         </Card>
       </div>
     </>

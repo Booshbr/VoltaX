@@ -7,7 +7,9 @@ import { CandleChart } from '@/components/candle-chart';
 import { OpenTradeButton } from '@/components/paper/open-trade-button';
 import type { TradeableSignal } from '@/components/paper/types';
 import { AiExplanation } from '@/components/ai-explanation';
+import { SaveSignalButton } from '@/components/save-signal-button';
 import { explainSignal, isAiConfigured } from '@/lib/ai/explain';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
@@ -107,8 +109,9 @@ export default async function SignalDetailPage({ params }: { params: { symbol: s
             <p className="text-sm text-muted">No risk calculation — setup not directional.</p>
           )}
           {tradeable ? (
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <OpenTradeButton signal={tradeable} methodologyVersion={e.methodologyVersion} />
+              {isSupabaseConfigured() ? <SaveSignalButton symbol={e.instrumentSymbol} /> : null}
               <span className="text-xs text-muted">Paper only — no real order is placed.</span>
             </div>
           ) : null}

@@ -41,3 +41,18 @@ supabase db push
   for server-side auth checks (never trust the client, spec §31).
 - The service-role key (`SUPABASE_SERVICE_ROLE_KEY`) is server-only and never
   bundled into the client.
+
+## Auth & persistence (wired; activates on configuration)
+- **Types**: `lib/supabase/database.types.ts` mirrors the migration (regenerate
+  with `supabase gen types typescript` once linked).
+- **Middleware**: root `middleware.ts` → `lib/supabase/middleware.ts` refreshes the
+  session and redirects unauthenticated users to `/login` for protected routes —
+  and is a **pass-through when Supabase is unconfigured**, so demo mode stays open.
+- **Auth UI**: `/login` (sign-in + password reset) with server actions in
+  `app/login/actions.ts`; `Settings → Account` shows the signed-in user + sign-out.
+- **Repositories**: `lib/supabase/repositories/signals.ts` persists signals
+  (+ reasons + an immutable creation event + an audit log) and lists them per user.
+  The pure insert-mappers are unit-tested; RLS enforces per-user isolation.
+- **History**: the History page lists persisted signals once configured; a
+  "Save to history" action on the signal detail page records the current read.
+- Everything above no-ops safely in demo mode — no keys, no gating, no errors.
