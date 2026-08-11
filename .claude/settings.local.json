@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --use-npm --turbopack --skip-install --yes)",
+      "Bash(npm install *)",
+      "Bash(npx vitest *)",
+      "Bash(git add *)",
+      "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m ' *)"
+    ]
+  }
+}
