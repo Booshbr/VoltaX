@@ -63,6 +63,8 @@ export interface EngineEvaluation {
   direction: Direction | null;
   status: SignalStatus;
   qualified: boolean;
+  /** Latest known price for marking positions to market (last available close). */
+  lastPrice: number | null;
   opportunityScore: number;
   reliability: ReliabilityResult;
   riskReward: number;
@@ -145,6 +147,15 @@ export function evaluate(input: EngineInput): EngineEvaluation {
   const reasons: SignalReason[] = [];
   const reliability = computeReliability(input.sample ?? { wins: 0, losses: 0 });
 
+  // Latest known price for marking positions (finest timeframe available).
+  const lastPrice =
+    c1m[c1m.length - 1]?.close ??
+    c5[c5.length - 1]?.close ??
+    c15[c15.length - 1]?.close ??
+    c1[c1.length - 1]?.close ??
+    c4[c4.length - 1]?.close ??
+    null;
+
   // Empty shells for early returns.
   const emptySetup = analyzeSetup(c15, 'neutral');
   const emptyEntry = analyzeEntry(c5, null);
@@ -157,6 +168,7 @@ export function evaluate(input: EngineInput): EngineEvaluation {
     family: input.instrument.family,
     direction: null,
     qualified: false,
+    lastPrice,
     opportunityScore: 0,
     reliability,
     riskReward: 0,

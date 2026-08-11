@@ -4,6 +4,8 @@ import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat, Badge, ScoreBar, InfoTip } from '@/components/ui';
 import { DirectionBadge, StatusBadge, BiasBadge, VolatilityBadge, GLOSSARY } from '@/components/domain';
 import { CandleChart } from '@/components/candle-chart';
+import { OpenTradeButton } from '@/components/paper/open-trade-button';
+import type { TradeableSignal } from '@/components/paper/types';
 import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +25,24 @@ export default async function SignalDetailPage({ params }: { params: { symbol: s
 
   const supporting = e.reasons.filter((r) => r.polarity === 'supporting');
   const cautionary = e.reasons.filter((r) => r.polarity === 'cautionary');
+
+  const tp1 = e.risk?.takeProfits[0]?.price;
+  const tradeable: TradeableSignal | null =
+    e.direction && e.risk && !e.risk.rejected && tp1 !== undefined && e.lastPrice !== null && e.risk.size > 0
+      ? {
+          symbol: e.instrumentSymbol,
+          family: e.family,
+          direction: e.direction,
+          entry: e.risk.entry,
+          stop: e.risk.stopLoss,
+          takeProfit: tp1,
+          size: e.risk.size,
+          reliability: e.reliability.score,
+          opportunityScore: e.opportunityScore,
+          lastPrice: e.lastPrice,
+          qualified: e.qualified,
+        }
+      : null;
 
   return (
     <>
@@ -87,6 +107,12 @@ export default async function SignalDetailPage({ params }: { params: { symbol: s
           ) : (
             <p className="text-sm text-muted">No risk calculation — setup not directional.</p>
           )}
+          {tradeable ? (
+            <div className="mt-3 flex items-center gap-2">
+              <OpenTradeButton signal={tradeable} methodologyVersion={e.methodologyVersion} />
+              <span className="text-xs text-muted">Paper only — no real order is placed.</span>
+            </div>
+          ) : null}
         </Card>
       </div>
 
