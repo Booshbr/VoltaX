@@ -5,6 +5,7 @@
  */
 import { evaluate, type EngineEvaluation } from '@/lib/signals/engine';
 import { runBacktest, type BacktestResult } from '@/lib/backtesting/backtest';
+import { researchAnalogs, type ResearchResult } from '@/lib/research/patterns';
 import type { Candle, DataQualityStatus, Timeframe } from '@/lib/types';
 import { DEMO_INSTRUMENTS, generateDataset } from './generator';
 
@@ -166,6 +167,7 @@ export interface DemoDetail {
   backtest: BacktestResult;
   recentCandles: Candle[];
   timeframe: Timeframe;
+  research: ResearchResult;
 }
 
 const detailCache = new Map<string, DemoDetail>();
@@ -193,6 +195,7 @@ export function getDemoDetail(symbol: string): DemoDetail | undefined {
     backtest,
     recentCandles: c15.slice(-80),
     timeframe: '15m',
+    research: researchAnalogs(c15, { window: 20, forward: 10, k: 8 }),
   };
   detailCache.set(symbol, detail);
   return detail;

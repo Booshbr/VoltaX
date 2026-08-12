@@ -10,6 +10,7 @@ import { TIMEFRAMES } from '@/lib/types';
 import { evaluate, type EngineEvaluation } from '@/lib/signals/engine';
 import { runBacktest, type BacktestResult } from '@/lib/backtesting/backtest';
 import { assessFeed } from '@/lib/market-data/quality';
+import { researchAnalogs } from '@/lib/research/patterns';
 import { getDerivClient } from './client';
 import { KNOWN_SYNTHETICS } from './symbols';
 import { classifyFamily } from '@/lib/config/families';
@@ -199,5 +200,6 @@ export async function getLiveDetail(symbol: string): Promise<MarketDetail | unde
     backtest: found.backtest,
     recentCandles: c15.slice(-80),
     timeframe: '15m',
+    research: researchAnalogs(c15, { window: 20, forward: 10, k: 8 }),
   };
 }

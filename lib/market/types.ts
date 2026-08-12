@@ -3,6 +3,7 @@
 import type { Candle, DataQualityStatus, Timeframe } from '@/lib/types';
 import type { EngineEvaluation } from '@/lib/signals/engine';
 import type { BacktestResult } from '@/lib/backtesting/backtest';
+import type { ResearchResult } from '@/lib/research/patterns';
 
 export type DataSource = 'live' | 'demo';
 
@@ -30,6 +31,8 @@ export interface MarketDetail {
   backtest: BacktestResult;
   recentCandles: Candle[];
   timeframe: Timeframe;
+  /** Historical-pattern research over this instrument's own history (spec §16). */
+  research: ResearchResult;
 }
 
 export function summarize(evaluations: EngineEvaluation[]): MarketSummary {

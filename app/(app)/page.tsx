@@ -4,6 +4,7 @@ import { Card, CardTitle, Stat, Dot } from '@/components/ui';
 import { SignalCard } from '@/components/signal-card';
 import { NotificationSync } from '@/components/notifications/notification-sync';
 import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
+import { dispatchQualifiedAlerts } from '@/lib/notifications/dispatch';
 import { formatMoney } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,9 @@ export default async function DashboardPage() {
       opportunityScore: e.opportunityScore,
       riskReward: e.riskReward,
     }));
+
+  // Server-side channels (Telegram): fire once per newly-qualified signal.
+  await dispatchQualifiedAlerts(qualifiedSignals);
 
   return (
     <>

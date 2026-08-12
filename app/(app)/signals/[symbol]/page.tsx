@@ -4,6 +4,7 @@ import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat, Badge, ScoreBar, InfoTip } from '@/components/ui';
 import { DirectionBadge, StatusBadge, BiasBadge, VolatilityBadge, GLOSSARY } from '@/components/domain';
 import { CandleChart } from '@/components/candle-chart';
+import { ResearchPanel } from '@/components/research-panel';
 import { OpenTradeButton } from '@/components/paper/open-trade-button';
 import type { TradeableSignal } from '@/components/paper/types';
 import { AiExplanation } from '@/components/ai-explanation';
@@ -22,7 +23,7 @@ export default async function SignalDetailPage({
   const { symbol } = await params;
   const detail = await getMarketDetail(symbol);
   if (!detail) notFound();
-  const { evaluation: e, backtest, recentCandles, source } = detail;
+  const { evaluation: e, backtest, recentCandles, source, research } = detail;
 
   const levels = e.risk
     ? [
@@ -187,6 +188,10 @@ export default async function SignalDetailPage({
             Reliability above is derived from this look-ahead-safe backtest, not asserted.
           </p>
         </Card>
+      </div>
+
+      <div className="mt-4">
+        <ResearchPanel research={research} timeframe={detail.timeframe} />
       </div>
 
       <Disclaimer />
