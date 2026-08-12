@@ -48,6 +48,7 @@ export async function executeSignalOrder(
   let currency = 'USD';
   let isVirtual = true;
   let authorized = false;
+  let authError: string | undefined;
 
   if (cfg.configured && cfg.config?.token) {
     try {
@@ -58,9 +59,14 @@ export async function executeSignalOrder(
       currency = acct.currency;
       isVirtual = acct.isVirtual;
       authorized = true;
-    } catch {
+    } catch (err) {
       authorized = false;
+      authError = err instanceof Error ? err.message : 'authorization failed';
+      client?.close();
+      client = null;
     }
+  } else {
+    authError = 'No Deriv account token configured (DERIV_API_TOKEN).';
   }
 
   // Risk sizing from the REAL balance: risk budget = balance × per-trade risk.
@@ -78,6 +84,7 @@ export async function executeSignalOrder(
       emergencyStop: live.emergencyStop,
       accountConnected: live.accountConnected,
       accountAuthorized: authorized,
+      authError,
     },
     risk: {
       config: riskConfig,
@@ -94,7 +101,8 @@ export async function executeSignalOrder(
   const safety = evaluateLiveExecution(safetyCtx);
   if (!safety.approved) {
     client?.close();
-    return { ok: false, safety, isVirtual, error: safety.rejectionReasons.join('; ') };
+    const prefix = authError ? `Deriv authorization failed: ${authError}. ` : '';
+    return { ok: false, safety, isVirtual, error: prefix + safety.rejectionReasons.join('; ') };
   }
 
   // Approved — place the order.

@@ -26,6 +26,8 @@ export interface LiveExecutionContext {
     accountConnected: boolean;
     /** The account was authorized this session (token verified). */
     accountAuthorized: boolean;
+    /** If authorization failed, the provider's error message (for diagnostics). */
+    authError?: string;
   };
   /** Risk state + config for exposure checks. */
   risk: {
@@ -89,7 +91,7 @@ export function evaluateLiveExecution(ctx: LiveExecutionContext): SafetyResult {
     ctx.live.accountConnected
       ? ctx.live.accountAuthorized
         ? 'Deriv account authorized'
-        : 'Token present but not authorized'
+        : `Token present but authorization failed${ctx.live.authError ? ` — ${ctx.live.authError}` : ''}`
       : 'No Deriv account token configured',
   );
 
@@ -120,25 +122,28 @@ export function evaluateLiveExecution(ctx: LiveExecutionContext): SafetyResult {
 
   // 7. Risk limits valid (per-trade, daily, open exposure, consecutive losses).
   const r = ctx.risk;
-  const perTradeFraction = r.accountEquity > 0 ? r.stake / r.accountEquity : Infinity;
+  const balanceOk = r.accountEquity > 0;
+  const perTradeFraction = balanceOk ? r.stake / r.accountEquity : Infinity;
   const dailyOk = r.guard.dailyRiskUsed + perTradeFraction <= r.config.maxDailyRisk + 1e-9;
   const openRiskOk = r.guard.openRiskExposure + perTradeFraction <= r.config.maxOpenRisk + 1e-9;
   const lossesOk = r.guard.consecutiveLosses < r.config.maxConsecutiveLosses;
   const notHalted = !r.guard.tradingHalted;
-  const riskOk = dailyOk && openRiskOk && lossesOk && notHalted;
+  const riskOk = balanceOk && dailyOk && openRiskOk && lossesOk && notHalted;
   add(
     'Risk limits valid',
     riskOk,
-    riskOk
-      ? 'Within per-trade, daily and open-risk limits'
-      : [
-          !notHalted && 'risk guard halted',
-          !dailyOk && 'daily risk limit',
-          !openRiskOk && 'open-risk limit',
-          !lossesOk && 'consecutive-loss limit',
-        ]
-          .filter(Boolean)
-          .join('; '),
+    !balanceOk
+      ? 'Account balance unavailable (authorize the account first)'
+      : riskOk
+        ? 'Within per-trade, daily and open-risk limits'
+        : [
+            !notHalted && 'risk guard halted',
+            !dailyOk && 'daily risk limit',
+            !openRiskOk && 'open-risk limit',
+            !lossesOk && 'consecutive-loss limit',
+          ]
+            .filter(Boolean)
+            .join('; '),
   );
 
   // 8. Position/exposure limits.
