@@ -15,7 +15,7 @@ import { getLiveState } from '@/lib/trading/live-controller';
 import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
 import { initialGuardState } from '@/lib/trading/risk';
 import type { EngineEvaluation } from '@/lib/signals/engine';
-import type { Instrument } from '@/lib/types';
+import type { DataQualityStatus, Instrument } from '@/lib/types';
 
 /** Default multiplier when the symbol's list isn't queried. Overridable via env. */
 const DEFAULT_MULTIPLIER = Number(process.env.DERIV_MULTIPLIER ?? 100);
@@ -36,6 +36,7 @@ export async function executeSignalOrder(
   evaluation: EngineEvaluation,
   instrument: Instrument,
   confirmed: boolean,
+  feed: DataQualityStatus,
 ): Promise<ExecuteResult> {
   const cfg = getDerivConfig();
   const live = getLiveState();
@@ -71,7 +72,7 @@ export async function executeSignalOrder(
   const safetyCtx: LiveExecutionContext = {
     evaluation,
     instrument,
-    feed: { quality: 'healthy', lastUpdateMs: 0, issues: [] }, // caller passes real feed via evaluation flow
+    feed,
     live: {
       enabled: live.enabled,
       emergencyStop: live.emergencyStop,

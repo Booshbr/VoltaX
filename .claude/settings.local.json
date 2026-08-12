@@ -33,7 +33,8 @@
       "Bash(node -e \"console.log\\('SUPABASE_URL set:', !!process.env.NEXT_PUBLIC_SUPABASE_URL\\); console.log\\('ANON set:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\\); console.log\\('DERIV_TOKEN set:', !!process.env.DERIV_API_TOKEN\\)\" -r dotenv/config)",
       "Bash(node -e \"const fs=require\\('fs'\\); const e=fs.existsSync\\('.env.local'\\)?fs.readFileSync\\('.env.local','utf8'\\):''; const has=k=>new RegExp\\('^'+k+'=.+','m'\\).test\\(e\\); console.log\\('.env.local exists:', fs.existsSync\\('.env.local'\\)\\); console.log\\('SUPABASE_URL set:', has\\('NEXT_PUBLIC_SUPABASE_URL'\\)\\); console.log\\('ANON set:', has\\('NEXT_PUBLIC_SUPABASE_ANON_KEY'\\)\\); console.log\\('DERIV_API_TOKEN set:', has\\('DERIV_API_TOKEN'\\)\\)\")",
       "Bash(curl -s -o /dev/null -w \"  HTTP %{http_code}\\\\n\" --max-time 40 http://localhost:3100/login)",
-      "Bash(curl -s --max-time 40 http://localhost:3100/login)"
+      "Bash(curl -s --max-time 40 http://localhost:3100/login)",
+      "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m 'fix\\(live\\): wire real market-data freshness into execution safety gate *)"
     ]
   }
 }

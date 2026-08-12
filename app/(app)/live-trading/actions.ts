@@ -15,7 +15,7 @@ import {
   type LiveControllerState,
 } from '@/lib/trading/live-controller';
 import { executeSignalOrder, type ExecuteResult } from '@/lib/deriv/trading';
-import { getMarketDetail } from '@/lib/market/source';
+import { getMarketDetail, getMarketView } from '@/lib/market/source';
 import type { Instrument } from '@/lib/types';
 import { classifyFamily } from '@/lib/config/families';
 
@@ -46,7 +46,7 @@ export async function clearEmergencyStopAction(): Promise<LiveControllerState> {
 /** Execute a signal as a real order. `confirmed` MUST come from a deliberate
  * user confirmation — the safety pipeline blocks it otherwise. */
 export async function executeOrderAction(symbol: string, confirmed: boolean): Promise<ExecuteResult | { error: string }> {
-  const detail = await getMarketDetail(symbol);
+  const [detail, view] = await Promise.all([getMarketDetail(symbol), getMarketView()]);
   if (!detail) return { error: 'Signal not found.' };
   const e = detail.evaluation;
   const instrument: Instrument = {
@@ -56,5 +56,5 @@ export async function executeOrderAction(symbol: string, confirmed: boolean): Pr
     pip: 0.01,
     active: true,
   };
-  return executeSignalOrder(e, instrument, confirmed);
+  return executeSignalOrder(e, instrument, confirmed, view.feed);
 }
