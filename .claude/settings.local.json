@@ -26,7 +26,14 @@
       "Bash(node -e \"console.log\\('react', require\\('./node_modules/react/package.json'\\).version\\); console.log\\('react-dom', require\\('./node_modules/react-dom/package.json'\\).version\\); console.log\\('eslint', require\\('./node_modules/eslint/package.json'\\).version\\)\")",
       "Bash(npx eslint *)",
       "Bash(echo \"\\(exit $?\\)\")",
-      "PowerShell(Get-NetTCPConnection -LocalPort 3100 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; \"stopped PID $_\" })"
+      "PowerShell(Get-NetTCPConnection -LocalPort 3100 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; \"stopped PID $_\" })",
+      "WebFetch(domain:developers.deriv.com)",
+      "WebSearch",
+      "Bash(curl -s -o /dev/null -w \"  %{redirect_url}\\\\n\" --max-time 40 http://localhost:3100/live-trading)",
+      "Bash(node -e \"console.log\\('SUPABASE_URL set:', !!process.env.NEXT_PUBLIC_SUPABASE_URL\\); console.log\\('ANON set:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\\); console.log\\('DERIV_TOKEN set:', !!process.env.DERIV_API_TOKEN\\)\" -r dotenv/config)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const e=fs.existsSync\\('.env.local'\\)?fs.readFileSync\\('.env.local','utf8'\\):''; const has=k=>new RegExp\\('^'+k+'=.+','m'\\).test\\(e\\); console.log\\('.env.local exists:', fs.existsSync\\('.env.local'\\)\\); console.log\\('SUPABASE_URL set:', has\\('NEXT_PUBLIC_SUPABASE_URL'\\)\\); console.log\\('ANON set:', has\\('NEXT_PUBLIC_SUPABASE_ANON_KEY'\\)\\); console.log\\('DERIV_API_TOKEN set:', has\\('DERIV_API_TOKEN'\\)\\)\")",
+      "Bash(curl -s -o /dev/null -w \"  HTTP %{http_code}\\\\n\" --max-time 40 http://localhost:3100/login)",
+      "Bash(curl -s --max-time 40 http://localhost:3100/login)"
     ]
   }
 }

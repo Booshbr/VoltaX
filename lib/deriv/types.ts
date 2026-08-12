@@ -51,6 +51,36 @@ export interface DerivError {
   message: string;
 }
 
+/** Multiplier proposal response (subset). */
+export interface DerivProposalResponse {
+  proposal?: {
+    id: string;
+    ask_price: number;
+    display_value: string;
+    spot: number;
+    spot_time: number;
+  };
+  error?: DerivError;
+}
+
+/** Buy response (subset). */
+export interface DerivBuyResponse {
+  buy?: {
+    contract_id: number;
+    buy_price: number;
+    balance_after: number;
+    longcode: string;
+    purchase_time: number;
+    transaction_id: number;
+  };
+  error?: DerivError;
+}
+
+export interface DerivBalanceResponse {
+  balance?: { balance: number; currency: string; loginid: string };
+  error?: DerivError;
+}
+
 /** Deriv candle granularities (seconds) accepted by ticks_history. */
 export const DERIV_GRANULARITY: Record<string, number> = {
   '1m': 60,

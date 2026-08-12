@@ -15,7 +15,23 @@ import {
   DERIV_GRANULARITY,
   type DerivActiveSymbolsResponse,
   type DerivCandlesResponse,
+  type DerivAuthorizeResponse,
+  type DerivBalanceResponse,
+  type DerivProposalResponse,
+  type DerivBuyResponse,
 } from './types';
+
+export interface MultiplierOrderParams {
+  symbol: string;
+  direction: 'long' | 'short';
+  /** Stake in account currency. */
+  amount: number;
+  multiplier: number;
+  currency: string;
+  /** Monetary stop-loss / take-profit (P/L amounts in currency). */
+  stopLoss: number;
+  takeProfit: number;
+}
 
 export class DerivNotConfiguredError extends Error {
   constructor(detail: string) {
@@ -174,6 +190,61 @@ export class DerivClient {
     if (res.error) throw new Error(`Deriv ticks_history: ${res.error.message}`);
     // Normalise: dedupe, sort, drop malformed candles before analysis (spec §40).
     return dedupeAndSort(validCandles(toCandles(res.candles ?? [])));
+  }
+
+  /**
+   * Authorize this connection with an account token (spec §8). Required before
+   * any balance/trading call. The token is used only here, server-side.
+   */
+  async authorize(token: string): Promise<{ loginid: string; currency: string; balance: number; isVirtual: boolean }> {
+    const res = await this.send<DerivAuthorizeResponse>({ authorize: token });
+    if (res.error) throw new Error(`Deriv authorize: ${res.error.message}`);
+    if (!res.authorize) throw new Error('Deriv authorize: empty response');
+    return {
+      loginid: res.authorize.loginid,
+      currency: res.authorize.currency,
+      balance: res.authorize.balance,
+      isVirtual: res.authorize.is_virtual === 1,
+    };
+  }
+
+  async getBalance(): Promise<{ balance: number; currency: string }> {
+    const res = await this.send<DerivBalanceResponse>({ balance: 1 });
+    if (res.error) throw new Error(`Deriv balance: ${res.error.message}`);
+    if (!res.balance) throw new Error('Deriv balance: empty response');
+    return { balance: res.balance.balance, currency: res.balance.currency };
+  }
+
+  /**
+   * Get a price proposal for a multiplier contract. `stopLoss`/`takeProfit` are
+   * MONETARY P/L amounts in the account currency (Deriv multiplier semantics),
+   * so they directly bound the money at risk (spec §19 — validated, not assumed).
+   */
+  async proposeMultiplier(p: MultiplierOrderParams): Promise<{ id: string; askPrice: number }> {
+    const res = await this.send<DerivProposalResponse>({
+      proposal: 1,
+      amount: p.amount,
+      basis: 'stake',
+      contract_type: p.direction === 'long' ? 'MULTUP' : 'MULTDOWN',
+      currency: p.currency,
+      symbol: p.symbol,
+      multiplier: p.multiplier,
+      limit_order: {
+        stop_loss: Number(p.stopLoss.toFixed(2)),
+        take_profit: Number(p.takeProfit.toFixed(2)),
+      },
+    });
+    if (res.error) throw new Error(`Deriv proposal: ${res.error.message}`);
+    if (!res.proposal) throw new Error('Deriv proposal: empty response');
+    return { id: res.proposal.id, askPrice: res.proposal.ask_price };
+  }
+
+  /** Buy a previously-proposed contract. `maxPrice` caps slippage. */
+  async buyContract(proposalId: string, maxPrice: number): Promise<{ contractId: number; buyPrice: number; longcode: string }> {
+    const res = await this.send<DerivBuyResponse>({ buy: proposalId, price: maxPrice });
+    if (res.error) throw new Error(`Deriv buy: ${res.error.message}`);
+    if (!res.buy) throw new Error('Deriv buy: empty response');
+    return { contractId: res.buy.contract_id, buyPrice: res.buy.buy_price, longcode: res.buy.longcode };
   }
 
   close(): void {
