@@ -1,32 +1,29 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { signIn, requestPasswordReset } from '@/app/login/actions';
+import { useActionState, useState } from 'react';
+import { signIn, requestPasswordReset, type AuthResult } from '@/app/login/actions';
 
-/** Sign-in form. Submits to the server action; credentials never touch client
- * state beyond the controlled inputs. */
+/**
+ * Sign-in form. Binds the server action via the form `action` prop, so submission
+ * is always a POST to the server action — it works even before/without client JS,
+ * and credentials are NEVER placed in the URL.
+ */
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
   const [resetMode, setResetMode] = useState(false);
+  const [signInState, signInAction, signInPending] = useActionState<AuthResult | null, FormData>(
+    signIn,
+    null,
+  );
+  const [resetState, resetAction, resetPending] = useActionState<AuthResult | null, FormData>(
+    requestPasswordReset,
+    null,
+  );
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-    const formData = new FormData(e.currentTarget);
-    startTransition(async () => {
-      const res = resetMode
-        ? await requestPasswordReset(formData)
-        : await signIn(formData);
-      if (res?.error) setError(res.error);
-      if (res?.message) setMessage(res.message);
-    });
-  }
+  const state = resetMode ? resetState : signInState;
+  const pending = resetMode ? resetPending : signInPending;
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <form action={resetMode ? resetAction : signInAction} className="space-y-3">
       <input type="hidden" name="redirect" value={redirectTo} />
       <label className="block text-sm">
         <span className="text-muted">Email</span>
@@ -51,8 +48,8 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
         </label>
       ) : null}
 
-      {error ? <p className="text-sm text-bear">{error}</p> : null}
-      {message ? <p className="text-sm text-bull">{message}</p> : null}
+      {state?.error ? <p className="text-sm text-bear">{state.error}</p> : null}
+      {state?.message ? <p className="text-sm text-bull">{state.message}</p> : null}
 
       <button
         type="submit"
@@ -64,11 +61,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
 
       <button
         type="button"
-        onClick={() => {
-          setResetMode((v) => !v);
-          setError(null);
-          setMessage(null);
-        }}
+        onClick={() => setResetMode((v) => !v)}
         className="w-full text-center text-xs text-muted hover:text-fg"
       >
         {resetMode ? '← Back to sign in' : 'Forgot your password?'}

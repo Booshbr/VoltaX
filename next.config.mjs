@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Allow the LAN address to load dev resources (Next 16 blocks cross-origin dev
+  // assets by default, which otherwise stops the client JS from hydrating when
+  // you open the app via the network IP instead of localhost).
+  allowedDevOrigins: ['172.16.144.172'],
   // Security headers applied to every response. See docs/SECURITY.md.
   async headers() {
     return [

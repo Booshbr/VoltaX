@@ -1,9 +1,10 @@
 'use server';
 
 /**
- * Auth server actions (spec §31). Sign-in/out and password reset via Supabase
- * Auth, server-side so credentials are never handled client-side. Each returns a
- * plain result the client can render; success paths redirect.
+ * Auth server actions (spec §31, §41). Sign-in/out and password reset via Supabase
+ * Auth, server-side. Uses the `(prevState, formData)` signature so the login form
+ * can bind them with the form `action` prop — a POST that works even without
+ * client JS and NEVER puts credentials in the URL.
  */
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
@@ -13,7 +14,7 @@ export interface AuthResult {
   message?: string;
 }
 
-export async function signIn(formData: FormData): Promise<AuthResult> {
+export async function signIn(_prev: AuthResult | null, formData: FormData): Promise<AuthResult> {
   const supabase = await createClient();
   if (!supabase) return { error: 'Supabase is not configured on this deployment.' };
 
@@ -28,13 +29,10 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   redirect(redirectTo);
 }
 
-export async function signOut(): Promise<void> {
-  const supabase = await createClient();
-  if (supabase) await supabase.auth.signOut();
-  redirect('/login');
-}
-
-export async function requestPasswordReset(formData: FormData): Promise<AuthResult> {
+export async function requestPasswordReset(
+  _prev: AuthResult | null,
+  formData: FormData,
+): Promise<AuthResult> {
   const supabase = await createClient();
   if (!supabase) return { error: 'Supabase is not configured on this deployment.' };
 
@@ -47,4 +45,10 @@ export async function requestPasswordReset(formData: FormData): Promise<AuthResu
   });
   if (error) return { error: error.message };
   return { message: 'If that email exists, a reset link has been sent.' };
+}
+
+export async function signOut(): Promise<void> {
+  const supabase = await createClient();
+  if (supabase) await supabase.auth.signOut();
+  redirect('/login');
 }
