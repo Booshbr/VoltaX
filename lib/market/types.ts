@@ -1,9 +1,26 @@
 /** Shared market-view shape produced by both the live and demo data sources, so
  * the UI is agnostic to where candles come from (spec §62 parity). */
-import type { Candle, DataQualityStatus, Timeframe } from '@/lib/types';
+import type { Candle, DataQuality, DataQualityStatus, Timeframe } from '@/lib/types';
 import type { EngineEvaluation } from '@/lib/signals/engine';
 import type { BacktestResult } from '@/lib/backtesting/backtest';
 import type { ResearchResult } from '@/lib/research/patterns';
+
+export interface InstrumentQuality {
+  symbol: string;
+  quality: DataQuality;
+  lastUpdateMs: number;
+  timeframe: Timeframe;
+  candleCount: number;
+  gaps: number;
+  issues: string[];
+}
+
+export interface DataQualityReport {
+  source: DataSource;
+  overall: DataQualityStatus;
+  instruments: InstrumentQuality[];
+  generatedAt: string;
+}
 
 export type DataSource = 'live' | 'demo';
 

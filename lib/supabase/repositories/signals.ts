@@ -7,6 +7,7 @@
  */
 import type { EngineEvaluation } from '@/lib/signals/engine';
 import { createClient, getCurrentUser } from '@/lib/supabase/server';
+import { writeAudit } from './audit';
 import type { Database, Json } from '@/lib/supabase/database.types';
 
 type SignalInsert = Database['public']['Tables']['signals']['Insert'];
@@ -95,10 +96,10 @@ export async function persistSignal(e: EngineEvaluation): Promise<PersistResult>
   const id = data.id;
   await supabase.from('signal_reasons').insert(toReasonInserts(e, id));
   await supabase.from('signal_events').insert(toInitialEventInsert(e, id));
-  await supabase.from('audit_logs').insert({
-    user_id: user.id,
-    event: 'signal_created',
-    detail: { signal_id: id, symbol: e.instrumentSymbol } as unknown as Json,
+  await writeAudit(user.id, 'signal_created', {
+    signal_id: id,
+    symbol: e.instrumentSymbol,
+    direction: e.direction,
   });
 
   return { id };

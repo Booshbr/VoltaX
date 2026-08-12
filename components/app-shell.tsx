@@ -20,7 +20,9 @@ const NAV: { href: string; label: string; group?: string }[] = [
   { href: '/history', label: 'History' },
   { href: '/alerts', label: 'Alerts' },
   { href: '/methodology', label: 'Methodology' },
+  { href: '/data-quality', label: 'Data Quality' },
   { href: '/system-health', label: 'System Health' },
+  { href: '/audit', label: 'Audit Log' },
   { href: '/settings', label: 'Settings' },
 ];
 

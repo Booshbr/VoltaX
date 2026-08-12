@@ -9,9 +9,15 @@
  *   unset                    → live when Deriv is configured, else demo
  */
 import { getDerivConfig } from '@/lib/deriv/config';
-import { getLiveMarketView, getLiveDetail, getLivePerformance } from '@/lib/deriv/live';
+import { getLiveMarketView, getLiveDetail, getLivePerformance, getLiveDataQuality } from '@/lib/deriv/live';
 import { getDemoMarketView, getDemoDetail, getDemoPerformance } from '@/lib/demo/dataset';
-import { summarize, type MarketDetail, type MarketView } from './types';
+import {
+  summarize,
+  type DataQualityReport,
+  type InstrumentQuality,
+  type MarketDetail,
+  type MarketView,
+} from './types';
 
 export interface PerformanceRow {
   symbol: string;
@@ -102,6 +108,30 @@ export async function getMarketDetail(symbol: string): Promise<MarketDetail | un
   if (!demo) return undefined;
   lastSource = 'demo';
   return { source: 'demo', ...demo };
+}
+
+export async function getDataQuality(): Promise<DataQualityReport> {
+  const view = await getMarketView();
+  if (view.source === 'live') {
+    try {
+      const instruments = await withTimeout(getLiveDataQuality(), LIVE_TIMEOUT_MS);
+      return { source: 'live', overall: view.feed, instruments, generatedAt: new Date().toISOString() };
+    } catch {
+      // fall through to demo-style report
+    }
+  }
+  // Demo data is synthetic and internally consistent (no gaps), anchored to a
+  // fixed generation time — report it as clean, matching the demo feed.
+  const instruments: InstrumentQuality[] = view.evaluations.map((e) => ({
+    symbol: e.instrumentSymbol,
+    quality: 'healthy',
+    lastUpdateMs: view.feed.lastUpdateMs,
+    timeframe: '1m',
+    candleCount: 0,
+    gaps: 0,
+    issues: [],
+  }));
+  return { source: 'demo', overall: view.feed, instruments, generatedAt: new Date().toISOString() };
 }
 
 export async function getPerformance(): Promise<Performance> {

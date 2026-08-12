@@ -10,7 +10,9 @@ import { TIMEFRAMES } from '@/lib/types';
 import { evaluate, type EngineEvaluation } from '@/lib/signals/engine';
 import { runBacktest, type BacktestResult } from '@/lib/backtesting/backtest';
 import { assessFeed } from '@/lib/market-data/quality';
+import { detectGaps } from '@/lib/market-data/candles';
 import { researchAnalogs } from '@/lib/research/patterns';
+import type { InstrumentQuality } from '@/lib/market/types';
 import { getDerivClient } from './client';
 import { KNOWN_SYNTHETICS } from './symbols';
 import { classifyFamily } from '@/lib/config/families';
@@ -187,6 +189,30 @@ export async function getLivePerformance(): Promise<{
       profitFactor: grossLossR > 0 ? grossWinR / grossLossR : null,
     },
   };
+}
+
+/** Per-instrument data-quality report from real candles (spec §40). */
+export async function getLiveDataQuality(): Promise<InstrumentQuality[]> {
+  const { data } = await getLive();
+  const now = Date.now();
+  return data.map((d) => {
+    const c1 = d.candles['1m'] ?? [];
+    const last = c1[c1.length - 1];
+    const lastUpdateMs = last ? now - (last.time + 60) * 1000 : Number.POSITIVE_INFINITY;
+    const status = assessFeed(lastUpdateMs, c1.slice(-60), '1m');
+    const gaps = detectGaps(c1, '1m').length;
+    const issues = [...status.issues];
+    if (gaps > 0) issues.push(`${gaps} missing candle(s)`);
+    return {
+      symbol: d.instrument.symbol,
+      quality: status.quality,
+      lastUpdateMs,
+      timeframe: '1m' as const,
+      candleCount: c1.length,
+      gaps,
+      issues,
+    };
+  });
 }
 
 export async function getLiveDetail(symbol: string): Promise<MarketDetail | undefined> {
