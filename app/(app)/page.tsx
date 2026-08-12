@@ -2,6 +2,8 @@ import { getMarketView } from '@/lib/market/source';
 import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat, Dot } from '@/components/ui';
 import { SignalCard } from '@/components/signal-card';
+import { NotificationSync } from '@/components/notifications/notification-sync';
+import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
 import { formatMoney } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
@@ -14,8 +16,19 @@ export default async function DashboardPage() {
   const qualified = evaluations.filter((e) => e.qualified);
   const top = (qualified.length ? qualified : evaluations).slice(0, 3);
 
+  const qualifiedSignals: QualifiedSignalInput[] = qualified
+    .filter((e) => e.direction)
+    .map((e) => ({
+      symbol: e.instrumentSymbol,
+      direction: e.direction as 'long' | 'short',
+      reliability: e.reliability.score,
+      opportunityScore: e.opportunityScore,
+      riskReward: e.riskReward,
+    }));
+
   return (
     <>
+      <NotificationSync signals={qualifiedSignals} />
       <PageHeader
         title="Dashboard"
         subtitle="What the market is doing, the best current opportunities, and system health."

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { ThemeToggle } from './theme-toggle';
+import { useUnreadCount } from './notifications/store';
 
 /** Primary navigation (spec §21). */
 const NAV: { href: string; label: string; group?: string }[] = [
@@ -92,6 +93,7 @@ export function AppShell({
             <span className="text-xs text-muted">Synthetic indices · data source shown per page</span>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <ModeIndicator mode={tradingMode} />
             <ThemeToggle />
           </div>
@@ -99,6 +101,25 @@ export function AppShell({
         <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
+  );
+}
+
+/** Unread in-app notification bell linking to the Alerts center (spec §30). */
+function NotificationBell() {
+  const unread = useUnreadCount();
+  return (
+    <Link
+      href="/alerts"
+      aria-label={`Alerts${unread > 0 ? ` — ${unread} unread` : ''}`}
+      className="relative inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-2 text-fg transition-colors hover:bg-surface"
+    >
+      <span aria-hidden>🔔</span>
+      {unread > 0 ? (
+        <span className="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-bear px-1 text-[10px] font-bold leading-4 text-white">
+          {unread > 9 ? '9+' : unread}
+        </span>
+      ) : null}
+    </Link>
   );
 }
 
