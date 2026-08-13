@@ -9,11 +9,14 @@ import type { DerivActiveSymbol, DerivCandle } from './types';
 
 /** Map a Deriv active symbol to a domain Instrument. */
 export function toInstrument(sym: DerivActiveSymbol): Instrument {
+  const symbol = sym.underlying_symbol ?? sym.symbol;
+  if (!symbol) throw new Error('Deriv active symbol has no identifier');
+  const displayName = sym.underlying_symbol_name ?? sym.display_name ?? symbol;
   return {
-    symbol: sym.symbol,
-    displayName: sym.display_name,
-    family: classifyFamily(sym.symbol, sym.display_name),
-    pip: sym.pip > 0 ? sym.pip : 0.01,
+    symbol,
+    displayName,
+    family: classifyFamily(symbol, displayName),
+    pip: (sym.pip_size ?? sym.pip ?? 0.01) > 0 ? (sym.pip_size ?? sym.pip ?? 0.01) : 0.01,
     active: sym.exchange_is_open === 1 && sym.is_trading_suspended === 0,
   };
 }
@@ -21,6 +24,7 @@ export function toInstrument(sym: DerivActiveSymbol): Instrument {
 /** Filter Deriv symbols to synthetic-index markets and map them. */
 export function toInstruments(symbols: DerivActiveSymbol[]): Instrument[] {
   return symbols
+    .filter((s) => Boolean(s.underlying_symbol ?? s.symbol))
     .filter((s) => s.market === 'synthetic_index' || s.submarket.includes('synthetic'))
     .map(toInstrument);
 }

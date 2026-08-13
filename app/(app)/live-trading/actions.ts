@@ -18,8 +18,16 @@ import { executeSignalOrder, type ExecuteResult } from '@/lib/deriv/trading';
 import { getMarketDetail, getMarketView } from '@/lib/market/source';
 import type { Instrument } from '@/lib/types';
 import { classifyFamily } from '@/lib/config/families';
+import { getDerivAccountSummary } from '@/lib/deriv/account';
 
 export async function enableLiveAction(): Promise<{ state: LiveControllerState; error?: string }> {
+  const account = await getDerivAccountSummary();
+  if (!account.connected) {
+    return {
+      state: getLiveState(),
+      error: account.error ?? 'Deriv account verification failed. Live trading remains off.',
+    };
+  }
   const res = enableLive();
   revalidatePath('/live-trading');
   return { state: getLiveState(), error: res.ok ? undefined : res.error };

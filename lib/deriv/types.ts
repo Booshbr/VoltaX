@@ -5,14 +5,17 @@
  */
 
 export interface DerivActiveSymbol {
-  symbol: string;
-  display_name: string;
+  symbol?: string;
+  display_name?: string;
   market: string;
   submarket: string;
-  submarket_display_name: string;
+  submarket_display_name?: string;
   exchange_is_open: 0 | 1;
   is_trading_suspended: 0 | 1;
-  pip: number;
+  pip?: number;
+  underlying_symbol?: string;
+  underlying_symbol_name?: string;
+  pip_size?: number;
 }
 
 export interface DerivActiveSymbolsResponse {

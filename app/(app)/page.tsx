@@ -7,11 +7,13 @@ import { NotificationSync } from '@/components/notifications/notification-sync';
 import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
 import { dispatchQualifiedAlerts } from '@/lib/notifications/dispatch';
 import { formatMoney, formatPercent, titleCase } from '@/lib/utils/format';
+import { recordQualifiedSignals } from '@/lib/supabase/repositories/signals';
+import { getDerivAccountSummary } from '@/lib/deriv/account';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const view = await getMarketView();
+  const [view, account] = await Promise.all([getMarketView(), getDerivAccountSummary()]);
   const { summary, evaluations, feed, source } = view;
   const isLive = source === 'live';
   const qualified = evaluations.filter((evaluation) => evaluation.qualified);
@@ -19,16 +21,20 @@ export default async function DashboardPage() {
   const lead = top[0];
 
   const qualifiedSignals: QualifiedSignalInput[] = qualified
-    .filter((evaluation) => evaluation.direction)
+    .filter((evaluation) => evaluation.direction && evaluation.risk)
     .map((evaluation) => ({
       symbol: evaluation.instrumentSymbol,
       direction: evaluation.direction as 'long' | 'short',
       reliability: evaluation.reliability.score,
       opportunityScore: evaluation.opportunityScore,
       riskReward: evaluation.riskReward,
+      entry: evaluation.risk!.entry,
+      stopLoss: evaluation.risk!.stopLoss,
+      takeProfits: evaluation.risk!.takeProfits.map((target) => target.price),
+      methodologyVersion: evaluation.methodologyVersion,
     }));
 
-  await dispatchQualifiedAlerts(qualifiedSignals);
+  await Promise.all([dispatchQualifiedAlerts(qualifiedSignals), recordQualifiedSignals(qualified)]);
 
   return (
     <>
@@ -48,8 +54,13 @@ export default async function DashboardPage() {
           <div className="relative">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-surface/60">Paper account</p>
-                <p className="tnum mt-3 text-4xl font-semibold tracking-[-0.06em] md:text-5xl">{formatMoney(view.accountEquity)}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-surface/60">
+                  {account.connected ? (account.isVirtual ? 'Deriv demo balance' : 'Deriv real balance') : 'Paper account'}
+                </p>
+                <p className="tnum mt-3 text-4xl font-semibold tracking-[-0.06em] md:text-5xl">
+                  {formatMoney(account.connected && account.balance !== undefined ? account.balance : view.accountEquity)}
+                  {account.connected && account.currency ? <span className="ml-2 text-base font-medium text-surface/60">{account.currency}</span> : null}
+                </p>
               </div>
               <span className="inline-flex items-center gap-2 rounded-full border border-surface/20 bg-surface/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-surface">
                 <span className="h-2 w-2 rounded-full bg-bull" aria-hidden />

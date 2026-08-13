@@ -30,15 +30,15 @@ export function getLiveState(): LiveControllerState {
   return {
     enabled,
     emergencyStop,
-    accountConnected: getDerivConfig().hasToken,
+    accountConnected: getDerivConfig().hasAccount,
     updatedAt,
   };
 }
 
 /** Enable live trading. Requires an account token — refuses otherwise. */
 export function enableLive(): { ok: boolean; error?: string } {
-  if (!getDerivConfig().hasToken) {
-    return { ok: false, error: 'No Deriv account token configured (DERIV_API_TOKEN).' };
+  if (!getDerivConfig().hasAccount) {
+    return { ok: false, error: 'Configure DERIV_API_TOKEN and DERIV_ACCOUNT_ID first.' };
   }
   if (emergencyStop) {
     return { ok: false, error: 'Clear the emergency stop before enabling live trading.' };

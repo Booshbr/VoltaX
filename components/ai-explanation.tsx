@@ -28,8 +28,10 @@ export function AiExplanation({
     startTransition(async () => {
       try {
         const result = await generateAiExplanation(symbol);
-        if (result) setExplanation(result);
-        else setError('Could not generate an explanation.');
+        if (result) {
+          setExplanation(result.explanation);
+          if (result.warning) setError(result.warning);
+        } else setError('Could not generate an explanation.');
       } catch {
         setError('AI explanation is temporarily unavailable — showing the standard explanation.');
       }
@@ -81,7 +83,7 @@ export function AiExplanation({
           </button>
         ) : (
           <span className="text-xs text-muted">
-            Configure <code className="text-fg">AI_API_KEY</code> to enable AI-written explanations.
+            Configure <code className="text-fg">GEMINI_API_KEY</code> or <code className="text-fg">AI_API_KEY</code> to enable AI-written explanations.
           </span>
         )}
         {error ? <span className="text-xs text-warn">{error}</span> : null}

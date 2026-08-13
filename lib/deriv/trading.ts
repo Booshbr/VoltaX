@@ -8,8 +8,10 @@
  * real-money token — the contract's exact price triggers depend on the chosen
  * multiplier and may differ from the analysis levels (spec §75, §76).
  */
-import { DerivClient, type MultiplierOrderParams } from './client';
+import type { MultiplierOrderParams } from './client';
 import { getDerivConfig } from './config';
+import { DerivAccountSocket } from './account';
+import type { DerivBalanceResponse, DerivBuyResponse, DerivProposalResponse } from './types';
 import { evaluateLiveExecution, type LiveExecutionContext, type SafetyResult } from '@/lib/trading/live-safety';
 import { getLiveState } from '@/lib/trading/live-controller';
 import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
@@ -43,21 +45,21 @@ export async function executeSignalOrder(
   const riskConfig = DEFAULT_STRATEGY.risk;
 
   // A dedicated authorized connection (never the shared public-data client).
-  let client: DerivClient | null = null;
+  let client: DerivAccountSocket | null = null;
   let balance = 0;
   let currency = 'USD';
   let isVirtual = true;
   let authorized = false;
   let authError: string | undefined;
 
-  if (cfg.configured && cfg.config?.token) {
+  if (cfg.hasAccount) {
     try {
-      client = new DerivClient(cfg.config);
-      await client.connect();
-      const acct = await client.authorize(cfg.config.token);
-      balance = acct.balance;
-      currency = acct.currency;
-      isVirtual = acct.isVirtual;
+      client = await DerivAccountSocket.open();
+      const accountBalance = await client.request<DerivBalanceResponse>({ balance: 1 });
+      if (!accountBalance.balance) throw new Error('Deriv returned no account balance');
+      balance = accountBalance.balance.balance;
+      currency = accountBalance.balance.currency;
+      isVirtual = client.isVirtual;
       authorized = true;
     } catch (err) {
       authorized = false;
@@ -66,7 +68,7 @@ export async function executeSignalOrder(
       client = null;
     }
   } else {
-    authError = 'No Deriv account token configured (DERIV_API_TOKEN).';
+    authError = 'Configure DERIV_API_TOKEN and DERIV_ACCOUNT_ID for the target account.';
   }
 
   // Risk sizing from the REAL balance: risk budget = balance × per-trade risk.
@@ -122,9 +124,28 @@ export async function executeSignalOrder(
   };
 
   try {
-    const proposal = await client.proposeMultiplier(params);
+    const proposalResponse = await client.request<DerivProposalResponse>({
+      proposal: 1,
+      amount: params.amount,
+      basis: 'stake',
+      contract_type: params.direction === 'long' ? 'MULTUP' : 'MULTDOWN',
+      currency: params.currency,
+      symbol: params.symbol,
+      multiplier: params.multiplier,
+      limit_order: { stop_loss: params.stopLoss, take_profit: params.takeProfit },
+    });
+    if (!proposalResponse.proposal) throw new Error('Deriv returned no multiplier proposal');
     // Cap slippage at 1% above the quoted ask price.
-    const order = await client.buyContract(proposal.id, proposal.askPrice * 1.01);
+    const buyResponse = await client.request<DerivBuyResponse>({
+      buy: proposalResponse.proposal.id,
+      price: proposalResponse.proposal.ask_price * 1.01,
+    });
+    if (!buyResponse.buy) throw new Error('Deriv returned no order confirmation');
+    const order = {
+      contractId: buyResponse.buy.contract_id,
+      buyPrice: buyResponse.buy.buy_price,
+      longcode: buyResponse.buy.longcode,
+    };
     client.close();
     return {
       ok: true,

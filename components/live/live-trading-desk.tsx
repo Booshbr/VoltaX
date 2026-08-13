@@ -9,6 +9,7 @@ import {
   executeOrderAction,
 } from '@/app/(app)/live-trading/actions';
 import type { LiveControllerState } from '@/lib/trading/live-controller';
+import type { DerivAccountSummary } from '@/lib/deriv/account';
 import { Card, CardTitle, Badge, Dot } from '@/components/ui';
 import { formatPercent, formatRR } from '@/lib/utils/format';
 
@@ -27,10 +28,12 @@ type ExecResult = Awaited<ReturnType<typeof executeOrderAction>>;
 export function LiveTradingDesk({
   initialState,
   hasToken,
+  account,
   signals,
 }: {
   initialState: LiveControllerState;
   hasToken: boolean;
+  account: DerivAccountSummary;
   signals: LiveSignal[];
 }) {
   const [state, setState] = useState<LiveControllerState>(initialState);
@@ -84,7 +87,13 @@ export function LiveTradingDesk({
           <ul className="space-y-2 text-sm">
             <li className="flex items-center justify-between">
               <span className="text-muted">Deriv account</span>
-              <Dot tone={hasToken ? 'bull' : 'muted'} label={hasToken ? 'Token configured' : 'No token (paper only)'} />
+              <Dot tone={account.connected ? 'bull' : hasToken ? 'warn' : 'muted'} label={account.connected ? (account.isVirtual ? 'Demo account connected' : 'Real account connected') : hasToken ? 'Could not verify account' : 'Credential missing'} />
+            </li>
+            <li className="flex items-center justify-between">
+              <span className="text-muted">Deriv balance</span>
+              <span className="tnum text-sm font-semibold text-fg">
+                {account.connected && account.balance !== undefined ? `${account.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${account.currency}` : 'Unavailable'}
+              </span>
             </li>
             <li className="flex items-center justify-between">
               <span className="text-muted">Live trading</span>
@@ -105,8 +114,9 @@ export function LiveTradingDesk({
           <CardTitle>Enable live trading</CardTitle>
           {!hasToken ? (
             <p className="text-sm text-muted">
-              Configure a <code className="text-fg">DERIV_API_TOKEN</code> server-side to enable live
-              trading. <strong className="text-fg">Use a Deriv demo (virtual) account token first</strong> —
+              Configure <code className="text-fg">DERIV_API_TOKEN</code> and the target
+              <code className="text-fg"> DERIV_ACCOUNT_ID</code> server-side to enable live
+              trading. <strong className="text-fg">Use a Deriv demo (virtual) account first</strong> —
               it trades with fake money so you can validate execution safely.
             </p>
           ) : state.enabled ? (
@@ -125,6 +135,7 @@ export function LiveTradingDesk({
             </div>
           ) : (
             <div className="space-y-3">
+              {!account.connected ? <p className="text-xs text-warn">Account verification failed: {account.error ?? 'check your Deriv token permissions and Vercel environment variables.'}</p> : null}
               <p className="text-sm text-muted">
                 Turning this on allows real orders through your Deriv account. VoltaX never switches
                 to live automatically — this is a deliberate action.

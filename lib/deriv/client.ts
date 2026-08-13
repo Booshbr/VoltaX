@@ -59,7 +59,9 @@ export class DerivClient {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return Promise.resolve();
     if (this.connectPromise) return this.connectPromise;
 
-    const url = `${this.config.wsUrl}?app_id=${encodeURIComponent(this.config.appId)}`;
+    const url = this.config.wsUrl.includes('/trading/v1/options/ws/')
+      ? this.config.wsUrl
+      : `${this.config.wsUrl}?app_id=${encodeURIComponent(this.config.appId)}`;
     this.connectPromise = new Promise((resolve, reject) => {
       const ws = new WebSocket(url);
       this.ws = ws;
@@ -124,7 +126,6 @@ export class DerivClient {
   async getInstruments(): Promise<Instrument[]> {
     const res = await this.send<DerivActiveSymbolsResponse>({
       active_symbols: 'brief',
-      product_type: 'basic',
     });
     if (res.error) throw new Error(`Deriv active_symbols: ${res.error.message}`);
     const discovered = toInstruments(res.active_symbols ?? []);

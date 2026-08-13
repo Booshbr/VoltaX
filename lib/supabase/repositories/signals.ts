@@ -105,6 +105,35 @@ export async function persistSignal(e: EngineEvaluation): Promise<PersistResult>
   return { id };
 }
 
+/**
+ * Record a qualified signal when the authenticated user's scanner sees it. This
+ * is deliberately idempotent within a short observation window: refreshes do
+ * not flood history, while a later re-qualification remains auditable.
+ */
+export async function recordQualifiedSignals(evaluations: EngineEvaluation[]): Promise<void> {
+  const supabase = await createClient();
+  if (!supabase) return;
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const cutoff = new Date(Date.now() - 15 * 60_000).toISOString();
+  for (const evaluation of evaluations) {
+    if (!evaluation.qualified || !evaluation.direction || !evaluation.risk) continue;
+    const { data: existing } = await supabase
+      .from('signals')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('instrument_symbol', evaluation.instrumentSymbol)
+      .eq('direction', evaluation.direction)
+      .eq('methodology_version', evaluation.methodologyVersion)
+      .eq('status', 'qualified')
+      .gte('created_at', cutoff)
+      .limit(1);
+    if (existing?.length) continue;
+    await persistSignal(evaluation);
+  }
+}
+
 /** List the current user's persisted signals, newest first. */
 export async function listSignals(limit = 100): Promise<SignalRow[]> {
   const supabase = await createClient();

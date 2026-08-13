@@ -7,6 +7,10 @@ const sig = (over: Partial<QualifiedSignalInput> = {}): QualifiedSignalInput => 
   reliability: 82,
   opportunityScore: 71,
   riskReward: 2,
+  entry: 52000,
+  stopLoss: 51900,
+  takeProfits: [52200, 52300],
+  methodologyVersion: 'VOLTAX-METHOD-1.0.0',
   ...over,
 });
 
@@ -18,6 +22,9 @@ describe('buildQualifiedNotification', () => {
     expect(notification.title).toContain('R_75');
     expect(notification.body).toMatch(/BUY/);
     expect(notification.body).toMatch(/82%/);
+    expect(notification.body).toMatch(/Entry: 52,000/);
+    expect(notification.body).toMatch(/Stop loss: 51,900/);
+    expect(notification.body).toMatch(/TP1: 52,200/);
   });
 
   it('distinguishes direction in the key', () => {

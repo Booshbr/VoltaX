@@ -4,11 +4,12 @@ import { Card, CardTitle, Badge } from '@/components/ui';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { listSignals } from '@/lib/supabase/repositories/signals';
 import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
+import { HistoryFilters } from '@/components/history-filters';
 
 export const metadata = { title: 'History — VoltaX' };
 export const dynamic = 'force-dynamic';
 
-export default async function HistoryPage() {
+export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ period?: string; symbol?: string }> }) {
   if (!isSupabaseConfigured()) {
     return (
       <>
@@ -23,7 +24,19 @@ export default async function HistoryPage() {
     );
   }
 
-  const signals = await listSignals(100);
+  const params = await searchParams;
+  const period = params.period === '7d' || params.period === '90d' || params.period === 'all' ? params.period : '30d';
+  const cutoffDays = period === '7d' ? 7 : period === '90d' ? 90 : period === 'all' ? null : 30;
+  const allSignals = await listSignals(500);
+  const cutoff = cutoffDays ? Date.now() - cutoffDays * 24 * 60 * 60_000 : null;
+  const signals = allSignals.filter((signal) =>
+    (!params.symbol || signal.instrument_symbol === params.symbol) &&
+    (!cutoff || new Date(signal.created_at).getTime() >= cutoff),
+  );
+  const averageReliability = signals.length ? signals.reduce((sum, signal) => sum + Number(signal.reliability_score), 0) / signals.length : 0;
+  const averageRiskReward = signals.length ? signals.reduce((sum, signal) => sum + Number(signal.risk_reward), 0) / signals.length : 0;
+  const qualified = signals.filter((signal) => signal.status === 'qualified').length;
+  const symbols = [...new Set(allSignals.map((signal) => signal.instrument_symbol))].sort();
 
   return (
     <>
@@ -31,11 +44,17 @@ export default async function HistoryPage() {
         title="Signal History"
         subtitle="Persisted signals with their original conditions and methodology version."
       />
+      <HistoryFilters symbols={symbols} />
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <Card><p className="text-xs font-medium uppercase tracking-wide text-muted">Recorded signals</p><p className="tnum mt-1 text-2xl font-bold text-fg">{signals.length}</p></Card>
+        <Card><p className="text-xs font-medium uppercase tracking-wide text-muted">Qualified</p><p className="tnum mt-1 text-2xl font-bold text-accent">{qualified}</p></Card>
+        <Card><p className="text-xs font-medium uppercase tracking-wide text-muted">Average quality</p><p className="tnum mt-1 text-2xl font-bold text-fg">{formatPercent(averageReliability)} <span className="text-sm font-medium text-muted">· {formatRR(averageRiskReward)}</span></p></Card>
+      </div>
       {signals.length === 0 ? (
         <Card>
           <p className="text-sm text-muted">
-            No saved signals yet. Open a signal and choose <strong>Save to history</strong> to
-            record it here.
+            No signals match these filters. Qualified signals are recorded automatically while
+            your authenticated dashboard is scanning; individual reads can still be saved manually.
           </p>
         </Card>
       ) : (

@@ -13,6 +13,8 @@ const schema = z.object({
   wsUrl: z.string().url(),
   /** Optional: without a token we can still read public market data. */
   token: z.string().min(1).optional(),
+  /** Options account ID, required for the current authenticated Deriv API. */
+  accountId: z.string().min(1).optional(),
 });
 
 export type DerivConfig = z.infer<typeof schema>;
@@ -21,6 +23,8 @@ export interface DerivConfigResult {
   configured: boolean;
   /** True when an account token is present (required for trading/balance). */
   hasToken: boolean;
+  /** True when the token and an Options account ID are both present. */
+  hasAccount: boolean;
   config: DerivConfig | null;
   error: string | null;
 }
@@ -34,26 +38,33 @@ export interface DerivConfigResult {
 export function getDerivConfig(): DerivConfigResult {
   if (typeof window !== 'undefined') {
     // Defense in depth: this module is server-only, but guard anyway.
-    return { configured: false, hasToken: false, config: null, error: 'server-only' };
+    return { configured: false, hasToken: false, hasAccount: false, config: null, error: 'server-only' };
   }
   const appId = process.env.DERIV_APP_ID;
   if (!appId) {
     return {
       configured: false,
       hasToken: false,
+      hasAccount: false,
       config: null,
       error: 'DERIV_APP_ID is not configured',
     };
   }
   const parsed = schema.safeParse({
     appId,
-    wsUrl: process.env.DERIV_WS_URL ?? 'wss://ws.derivws.com/websockets/v3',
+    // The old `ws.derivws.com/websockets/v3` URL is legacy. Public market data
+    // now uses the current Options public WebSocket endpoint.
+    wsUrl: process.env.DERIV_WS_URL === 'wss://ws.derivws.com/websockets/v3'
+      ? 'wss://api.derivws.com/trading/v1/options/ws/public'
+      : process.env.DERIV_WS_URL ?? 'wss://api.derivws.com/trading/v1/options/ws/public',
     token: process.env.DERIV_API_TOKEN || undefined,
+    accountId: process.env.DERIV_ACCOUNT_ID || undefined,
   });
   if (!parsed.success) {
     return {
       configured: false,
       hasToken: false,
+      hasAccount: false,
       config: null,
       error: parsed.error.issues.map((i) => i.message).join('; '),
     };
@@ -61,6 +72,7 @@ export function getDerivConfig(): DerivConfigResult {
   return {
     configured: true,
     hasToken: Boolean(parsed.data.token),
+    hasAccount: Boolean(parsed.data.token && parsed.data.accountId),
     config: parsed.data,
     error: null,
   };

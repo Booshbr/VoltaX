@@ -1,6 +1,7 @@
 import { PageHeader, Disclaimer } from '@/components/page';
 import { getLiveState } from '@/lib/trading/live-controller';
 import { getDerivConfig } from '@/lib/deriv/config';
+import { getDerivAccountSummary } from '@/lib/deriv/account';
 import { getMarketView } from '@/lib/market/source';
 import { LiveTradingDesk, type LiveSignal } from '@/components/live/live-trading-desk';
 
@@ -12,8 +13,8 @@ export const dynamic = 'force-dynamic';
  * automatic. */
 export default async function LiveTradingPage() {
   const initialState = getLiveState();
-  const hasToken = getDerivConfig().hasToken;
-  const { evaluations } = await getMarketView();
+  const hasToken = getDerivConfig().hasAccount;
+  const [{ evaluations }, account] = await Promise.all([getMarketView(), getDerivAccountSummary()]);
 
   const signals: LiveSignal[] = evaluations
     .filter((e) => e.qualified && e.direction)
@@ -31,7 +32,7 @@ export default async function LiveTradingPage() {
         title="Live Trading"
         subtitle="Opt-in real execution with independent safety layers. VoltaX never switches from paper to live automatically."
       />
-      <LiveTradingDesk initialState={initialState} hasToken={hasToken} signals={signals} />
+      <LiveTradingDesk initialState={initialState} hasToken={hasToken} account={account} signals={signals} />
       <Disclaimer />
     </>
   );
