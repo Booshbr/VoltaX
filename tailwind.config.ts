@@ -28,6 +28,7 @@ const config: Config = {
         warn: 'hsl(var(--warn) / <alpha-value>)',
       },
       fontFamily: {
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
     },

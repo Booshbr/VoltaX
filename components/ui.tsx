@@ -13,7 +13,7 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-surface p-4 shadow-sm',
+        'rounded-2xl border border-border bg-surface p-5 shadow-[0_1px_2px_hsl(var(--fg)/0.03),0_12px_28px_hsl(var(--fg)/0.035)] transition-shadow duration-200 hover:shadow-[0_1px_2px_hsl(var(--fg)/0.04),0_16px_32px_hsl(var(--fg)/0.055)]',
         className,
       )}
     >
@@ -25,8 +25,8 @@ export function Card({
 export function CardTitle({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-semibold tracking-wide text-fg">{children}</h2>
-      {hint ? <span className="text-xs text-muted">{hint}</span> : null}
+      <h2 className="text-sm font-bold tracking-[-0.01em] text-fg">{children}</h2>
+      {hint ? <span className="text-xs font-medium text-muted">{hint}</span> : null}
     </div>
   );
 }
@@ -51,8 +51,8 @@ export function Stat({
   }[tone];
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
-      <div className={cn('tnum text-2xl font-semibold', toneClass)}>{value}</div>
+      <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{label}</div>
+      <div className={cn('tnum mt-1 text-2xl font-semibold tracking-[-0.04em]', toneClass)}>{value}</div>
       {sub ? <div className="text-xs text-muted">{sub}</div> : null}
     </div>
   );
@@ -81,7 +81,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-[0.02em]',
         tones[tone],
         className,
       )}

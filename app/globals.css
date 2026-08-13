@@ -3,35 +3,35 @@
 @tailwind utilities;
 
 /*
- * VoltaX theme tokens (spec §49). HSL channels only, consumed by tailwind.config.ts
- * via hsl(var(--token) / <alpha>). Dark is the default terminal aesthetic; `.light`
- * on <html> switches to the clean analytics palette. Both aim for accessible contrast.
+ * VoltaX enterprise-fintech design tokens. HSL channels are consumed by
+ * Tailwind through tailwind.config.ts. The default is a calm, high-clarity
+ * workspace; dark mode preserves the same hierarchy rather than inverting it.
  */
 :root,
-.dark {
-  --bg: 222 30% 7%;          /* dark graphite / deep navy */
-  --surface: 222 26% 10%;
-  --surface-2: 221 24% 14%;
-  --border: 220 18% 20%;
-  --fg: 210 25% 92%;
-  --muted: 217 14% 60%;
-  --accent: 187 92% 52%;     /* electric cyan */
-  --bull: 152 62% 45%;       /* controlled green */
-  --bear: 356 70% 58%;       /* controlled red */
-  --warn: 38 92% 55%;        /* amber */
+.light {
+  --bg: 252 20% 96%;
+  --surface: 0 0% 100%;
+  --surface-2: 250 25% 97%;
+  --border: 240 16% 88%;
+  --fg: 222 27% 13%;
+  --muted: 218 13% 38%;
+  --accent: 256 61% 44%;
+  --bull: 142 81% 31%;
+  --bear: 5 92% 47%;
+  --warn: 36 93% 40%;
 }
 
-.light {
-  --bg: 210 40% 98%;
-  --surface: 0 0% 100%;
-  --surface-2: 214 32% 96%;
-  --border: 214 20% 86%;
-  --fg: 222 35% 16%;
-  --muted: 217 12% 42%;
-  --accent: 190 90% 38%;
-  --bull: 152 55% 36%;
-  --bear: 356 65% 48%;
-  --warn: 32 88% 42%;
+.dark {
+  --bg: 228 25% 8%;
+  --surface: 228 22% 12%;
+  --surface-2: 226 19% 16%;
+  --border: 224 14% 23%;
+  --fg: 240 20% 96%;
+  --muted: 222 12% 66%;
+  --accent: 258 85% 73%;
+  --bull: 151 64% 51%;
+  --bear: 5 86% 67%;
+  --warn: 40 95% 62%;
 }
 
 * {
@@ -39,20 +39,28 @@
 }
 
 body {
-  background-color: hsl(var(--bg));
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 100% 0%, hsl(var(--accent) / 0.06), transparent 24rem),
+    hsl(var(--bg));
   color: hsl(var(--fg));
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
 }
 
-/* Accessible focus ring — never rely on colour alone (spec §51). */
+/* Accessible focus ring: never rely on colour alone. */
 :focus-visible {
   outline: 2px solid hsl(var(--accent));
   outline-offset: 2px;
 }
 
-/* Tabular figures for price/stat columns. */
+/* Tabular figures for prices, statistics and timers. */
 .tnum {
   font-variant-numeric: tabular-nums;
   font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+::selection {
+  background: hsl(var(--accent) / 0.18);
 }

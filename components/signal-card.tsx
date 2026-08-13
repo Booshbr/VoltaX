@@ -29,7 +29,7 @@ export function SignalCard({ evaluation }: { evaluation: EngineEvaluation }) {
         <DirectionBadge direction={e.direction} />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-3 gap-2 rounded-xl bg-surface-2 p-1.5 text-center">
         <MiniStat label="Reliability" value={formatPercent(e.reliability.score)} />
         <MiniStat label="Opportunity" value={`${e.opportunityScore}`} />
         <MiniStat label="R : R" value={formatRR(e.riskReward)} />
@@ -38,7 +38,7 @@ export function SignalCard({ evaluation }: { evaluation: EngineEvaluation }) {
 
       <div className="grid grid-cols-5 gap-1 text-center text-[11px]">
         {rows.map(([tf, val]) => (
-          <div key={tf} className="rounded-md bg-surface-2 py-1">
+          <div key={tf} className="rounded-lg border border-border/70 bg-surface-2 py-1.5">
             <div className="text-muted">{tf}</div>
             <div className="font-medium text-fg">{val}</div>
           </div>
@@ -71,7 +71,7 @@ export function SignalCard({ evaluation }: { evaluation: EngineEvaluation }) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-surface-2 py-1.5">
+    <div className="rounded-lg bg-surface py-2">
       <div className="text-[10px] uppercase tracking-wide text-muted">{label}</div>
       <div className="tnum text-sm font-semibold text-fg">{value}</div>
     </div>

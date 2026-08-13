@@ -20,10 +20,11 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-fg">{title}</h1>
-        {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-accent">VoltaX intelligence</p>
+        <h1 className="text-2xl font-bold tracking-[-0.04em] text-fg md:text-3xl">{title}</h1>
+        {subtitle ? <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">{subtitle}</p> : null}
       </div>
       {actions}
     </div>

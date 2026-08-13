@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import { JetBrains_Mono } from 'next/font/google';
+import { JetBrains_Mono, Manrope } from 'next/font/google';
 import './globals.css';
 
 const mono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
+  display: 'swap',
+});
+
+const sans = Manrope({
+  subsets: ['latin'],
+  variable: '--font-sans',
   display: 'swap',
 });
 
@@ -29,8 +35,7 @@ const themeInit = `
 (function(){
   try {
     var stored = localStorage.getItem('voltax-theme');
-    var system = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    var theme = stored === 'light' || stored === 'dark' ? stored : system;
+    var theme = stored === 'light' || stored === 'dark' ? stored : 'light';
     document.documentElement.classList.add(theme);
     document.documentElement.style.colorScheme = theme;
   } catch (e) {
@@ -41,7 +46,7 @@ const themeInit = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={mono.variable}>
+    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
