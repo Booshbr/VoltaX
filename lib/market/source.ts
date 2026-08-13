@@ -9,15 +9,33 @@
  *   unset                    → live when Deriv is configured, else demo
  */
 import { getDerivConfig } from '@/lib/deriv/config';
-import { getLiveMarketView, getLiveDetail, getLivePerformance, getLiveDataQuality } from '@/lib/deriv/live';
-import { getDemoMarketView, getDemoDetail, getDemoPerformance } from '@/lib/demo/dataset';
+import {
+  getLiveMarketView,
+  getLiveDetail,
+  getLivePerformance,
+  getLiveDataQuality,
+  getLiveCandles,
+} from '@/lib/deriv/live';
+import { getDemoMarketView, getDemoDetail, getDemoPerformance, getDemoCandles } from '@/lib/demo/dataset';
+import { analyzeStructure } from '@/lib/analytics/structure';
+import type { Candle, SwingPoint, Timeframe, Zone } from '@/lib/types';
 import {
   summarize,
+  type DataSource,
   type DataQualityReport,
   type InstrumentQuality,
   type MarketDetail,
   type MarketView,
 } from './types';
+
+export interface ChartSeries {
+  source: DataSource;
+  symbol: string;
+  timeframe: Timeframe;
+  candles: Candle[];
+  swings: SwingPoint[];
+  zones: Zone[];
+}
 
 export interface PerformanceRow {
   symbol: string;
@@ -132,6 +150,40 @@ export async function getDataQuality(): Promise<DataQualityReport> {
     issues: [],
   }));
   return { source: 'demo', overall: view.feed, instruments, generatedAt: new Date().toISOString() };
+}
+
+/** Candles + structure annotations for one symbol/timeframe, for the Charts page. */
+export async function getChartSeries(symbol: string, tf: Timeframe): Promise<ChartSeries> {
+  let candles: Candle[] = [];
+  let source: DataSource = 'demo';
+  if (liveEnabled()) {
+    try {
+      const c = await withTimeout(getLiveCandles(symbol, tf), LIVE_TIMEOUT_MS);
+      if (c.length) {
+        candles = c;
+        source = 'live';
+      }
+    } catch {
+      // fall through to demo
+    }
+  }
+  if (candles.length === 0) {
+    candles = getDemoCandles(symbol, tf);
+    source = 'demo';
+  }
+
+  const structure = analyzeStructure(candles, tf);
+  // Show the most recent slice, reindexing annotations to it.
+  const view = candles.slice(-140);
+  const start = candles.length - view.length;
+  const swings = structure.swings
+    .filter((s) => s.index >= start)
+    .map((s) => ({ ...s, index: s.index - start }));
+  const zones = structure.zones
+    .filter((z) => z.originIndex >= start)
+    .map((z) => ({ ...z, originIndex: z.originIndex - start }));
+
+  return { source, symbol, timeframe: tf, candles: view, swings, zones };
 }
 
 export async function getPerformance(): Promise<Performance> {

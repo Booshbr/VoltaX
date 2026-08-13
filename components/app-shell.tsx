@@ -13,6 +13,7 @@ const NAV: { href: string; label: string; group?: string }[] = [
   { href: '/radar', label: 'Radar' },
   { href: '/signals', label: 'Signals' },
   { href: '/markets', label: 'Markets' },
+  { href: '/charts', label: 'Charts' },
   { href: '/backtesting', label: 'Backtesting' },
   { href: '/paper-trading', label: 'Paper Trading' },
   { href: '/live-trading', label: 'Live Trading' },

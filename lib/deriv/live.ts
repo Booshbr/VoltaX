@@ -191,6 +191,13 @@ export async function getLivePerformance(): Promise<{
   };
 }
 
+/** Raw candles for one symbol/timeframe from the live cache (spec §25). */
+export async function getLiveCandles(symbol: string, tf: Timeframe): Promise<Candle[]> {
+  const { data } = await getLive();
+  const found = data.find((d) => d.instrument.symbol === symbol);
+  return found?.candles[tf] ?? [];
+}
+
 /** Per-instrument data-quality report from real candles (spec §40). */
 export async function getLiveDataQuality(): Promise<InstrumentQuality[]> {
   const { data } = await getLive();

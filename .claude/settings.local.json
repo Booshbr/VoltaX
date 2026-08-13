@@ -36,7 +36,8 @@
       "Bash(curl -s --max-time 40 http://localhost:3100/login)",
       "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m 'fix\\(live\\): wire real market-data freshness into execution safety gate *)",
       "Bash(node -e \"const fs=require\\('fs'\\); const e=fs.existsSync\\('.env.local'\\)?fs.readFileSync\\('.env.local','utf8'\\):''; const has=k=>new RegExp\\('^'+k+'=.+','m'\\).test\\(e\\); console.log\\('DERIV_API_TOKEN set:', has\\('DERIV_API_TOKEN'\\)\\); console.log\\('VOLTAX_DATA_SOURCE:', \\(e.match\\(/^VOLTAX_DATA_SOURCE=\\(.*\\)$/m\\)||[]\\)[1] || '\\(unset -> live\\)'\\)\")",
-      "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m 'fix\\(live\\): surface Deriv authorize error + clearer zero-balance risk gate *)"
+      "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m 'fix\\(live\\): surface Deriv authorize error + clearer zero-balance risk gate *)",
+      "Bash(rm -f /tmp/deriv-auth-probe.mjs && echo \"removed probe\")"
     ]
   }
 }

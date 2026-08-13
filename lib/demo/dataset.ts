@@ -90,6 +90,21 @@ export function getDemoEvaluation(symbol: string): EngineEvaluation | undefined 
   return getDemoMarketView().evaluations.find((e) => e.instrumentSymbol === symbol);
 }
 
+// Cache generated datasets so repeated chart requests don't re-generate.
+const datasetCache = new Map<string, ReturnType<typeof generateDataset>>();
+
+/** Raw candles for one demo symbol/timeframe (spec §25). */
+export function getDemoCandles(symbol: string, tf: Timeframe): Candle[] {
+  const meta = DEMO_INSTRUMENTS.find((d) => d.symbol === symbol);
+  if (!meta) return [];
+  let ds = datasetCache.get(symbol);
+  if (!ds) {
+    ds = generateDataset(meta.symbol, meta.name, meta.regime, DEMO_NOW);
+    datasetCache.set(symbol, ds);
+  }
+  return ds.candles[tf] ?? [];
+}
+
 export interface DemoPerformanceRow {
   symbol: string;
   family: string;
