@@ -26,16 +26,27 @@ export interface DerivConfigResult {
 }
 
 /**
- * Read and validate Deriv config from the environment. Never throws — returns a
- * structured result so callers can degrade safely (spec §39 fail-safe).
+ * Read and validate Deriv config from the environment. A project must explicitly
+ * provide its own app ID before live market data is attempted. This prevents a
+ * deployed demo from opening slow, failing provider connections on every request.
+ * Never throws — callers receive a structured, safe fallback state.
  */
 export function getDerivConfig(): DerivConfigResult {
   if (typeof window !== 'undefined') {
     // Defense in depth: this module is server-only, but guard anyway.
     return { configured: false, hasToken: false, config: null, error: 'server-only' };
   }
+  const appId = process.env.DERIV_APP_ID;
+  if (!appId) {
+    return {
+      configured: false,
+      hasToken: false,
+      config: null,
+      error: 'DERIV_APP_ID is not configured',
+    };
+  }
   const parsed = schema.safeParse({
-    appId: process.env.DERIV_APP_ID ?? '1089',
+    appId,
     wsUrl: process.env.DERIV_WS_URL ?? 'wss://ws.derivws.com/websockets/v3',
     token: process.env.DERIV_API_TOKEN || undefined,
   });

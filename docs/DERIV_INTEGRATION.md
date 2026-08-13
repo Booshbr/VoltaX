@@ -31,7 +31,7 @@ metadata (with a heuristic fallback). The universe is discovered, not hard-coded
 
 ## Live market data (working)
 Real historical candles flow end-to-end via the public endpoint (no account token
-needed): `client.getCandleSet(symbol, timeframes, count)` fetches all timeframes in
+needed) once `DERIV_APP_ID` is explicitly configured: `client.getCandleSet(symbol, timeframes, count)` fetches all timeframes in
 parallel with price digits. `lib/deriv/live.ts` builds a full market view — real
 engine + backtest per instrument, freshness from candle epochs — cached ~60s and
 concurrency-limited. `lib/market/source.ts` picks live vs demo with a timeout and
@@ -43,7 +43,6 @@ source is live via a badge.
 > remains primary and is used automatically wherever the provider returns symbols.
 
 ## Not yet wired (configuration required)
-Live *tick streaming* / subscription management and *order execution* are defined by
-the abstraction and gated behind an account token + safety checks. Implement the
-execution call against the current contract spec before live use, verifying
-semantics against official Deriv docs (spec §75).
+Live *order execution* is defined by the abstraction and gated behind an account
+token + safety checks. Implement the execution call against the current contract
+spec before live use, verifying semantics against official Deriv docs (spec §75).

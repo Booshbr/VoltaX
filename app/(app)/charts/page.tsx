@@ -3,6 +3,7 @@ import { PageHeader, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Badge } from '@/components/ui';
 import { ChartControls } from '@/components/chart-controls';
 import { CandleChart } from '@/components/candle-chart';
+import { LiveCandleChart } from '@/components/live-candle-chart';
 import { BiasBadge, VolatilityBadge } from '@/components/domain';
 import { TIMEFRAMES, type Timeframe } from '@/lib/types';
 import { titleCase } from '@/lib/utils/format';
@@ -62,7 +63,11 @@ export default async function ChartsPage({
             </div>
           ) : null}
         </div>
-        <CandleChart candles={series.candles} levels={levels} swings={series.swings} zones={series.zones} height={360} />
+        {series.source === 'live' ? (
+          <LiveCandleChart symbol={symbol} timeframe={tf} candles={series.candles} levels={levels} swings={series.swings} zones={series.zones} />
+        ) : (
+          <CandleChart candles={series.candles} levels={levels} swings={series.swings} zones={series.zones} height={360} />
+        )}
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
           <span>● <span className="text-bull">demand/support</span> &amp; <span className="text-bear">supply/resistance</span> zones</span>
           <span>Swing highs (red) / lows (green)</span>
