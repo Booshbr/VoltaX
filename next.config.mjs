@@ -2,10 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // Allow the LAN address to load dev resources (Next 16 blocks cross-origin dev
-  // assets by default, which otherwise stops the client JS from hydrating when
-  // you open the app via the network IP instead of localhost).
-  allowedDevOrigins: ['172.16.144.172'],
+  // Dev-only: allow specific LAN origins to load dev assets (Next 16 blocks
+  // cross-origin dev resources by default). Set VOLTAX_DEV_ORIGINS to a
+  // comma-separated list to open the dev server from other devices; harmless in
+  // production. Defaults cover localhost access with no config.
+  allowedDevOrigins: (process.env.VOLTAX_DEV_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
   // Security headers applied to every response. See docs/SECURITY.md.
   async headers() {
     return [

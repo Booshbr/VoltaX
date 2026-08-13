@@ -9,7 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getSupabasePublicEnv } from './env';
 
 /** Paths that never require authentication. */
-const PUBLIC_PREFIXES = ['/login', '/auth', '/_next', '/favicon'];
+const PUBLIC_PREFIXES = ['/login', '/auth', '/_next', '/favicon', '/api/health'];
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   const env = getSupabasePublicEnv();
