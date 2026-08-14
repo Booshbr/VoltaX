@@ -119,6 +119,40 @@ export interface CloseResult {
   error?: string;
 }
 
+export interface DailyPnl {
+  /** UTC date, YYYY-MM-DD. */
+  date: string;
+  pnl: number;
+}
+
+/** Realised P/L per UTC day for the last `days` days (closed contracts only). */
+export async function getDailyPnlHistory(days = 14): Promise<DailyPnl[]> {
+  if (!getDerivConfig().hasAccount) return [];
+  let client: DerivAccountSocket | null = null;
+  try {
+    client = await DerivAccountSocket.open();
+    const from = startOfUtcTodaySeconds() - (days - 1) * 86400;
+    const table = await client.request<DerivProfitTableResponse>({ profit_table: 1, description: 0, date_from: from, sort: 'ASC' });
+    const buckets = new Map<string, number>();
+    for (const t of table.profit_table?.transactions ?? []) {
+      if (typeof t.sell_price === 'number' && typeof t.buy_price === 'number' && typeof t.sell_time === 'number') {
+        const date = new Date(t.sell_time * 1000).toISOString().slice(0, 10);
+        buckets.set(date, (buckets.get(date) ?? 0) + (t.sell_price - t.buy_price));
+      }
+    }
+    const out: DailyPnl[] = [];
+    for (let i = 0; i < days; i += 1) {
+      const date = new Date((startOfUtcTodaySeconds() - (days - 1 - i) * 86400) * 1000).toISOString().slice(0, 10);
+      out.push({ date, pnl: Number((buckets.get(date) ?? 0).toFixed(2)) });
+    }
+    return out;
+  } catch {
+    return [];
+  } finally {
+    client?.close();
+  }
+}
+
 /** Close (sell) one open contract at market. */
 export async function closeLivePosition(contractId: number): Promise<CloseResult> {
   if (!getDerivConfig().hasAccount) return { ok: false, error: 'Deriv account not configured.' };

@@ -4,6 +4,7 @@ import { Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Dot, Stat } from '@/components/ui';
 import { SignalCard } from '@/components/signal-card';
 import { NotificationSync } from '@/components/notifications/notification-sync';
+import { ExposureWidget } from '@/components/dashboard/exposure-widget';
 import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
 import { dispatchQualifiedAlerts } from '@/lib/notifications/dispatch';
 import { formatMoney, formatPercent, titleCase } from '@/lib/utils/format';
@@ -94,6 +95,10 @@ export default async function DashboardPage() {
           </Link>
         </Card>
       </section>
+
+      <div className="mt-4">
+        <ExposureWidget />
+      </div>
 
       <section className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card><Stat label="Bullish bias" value={summary.bullish} tone="bull" /></Card>

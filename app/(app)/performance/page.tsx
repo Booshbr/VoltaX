@@ -1,15 +1,18 @@
 import { getPerformance } from '@/lib/market/source';
 import { getOutcomeStats } from '@/lib/supabase/repositories/outcomes';
+import { getDailyPnlHistory } from '@/lib/deriv/positions';
 import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat } from '@/components/ui';
+import { DailyPnlChart } from '@/components/live/daily-pnl-chart';
 import { formatPercent, titleCase } from '@/lib/utils/format';
 
 export const metadata = { title: 'Performance — VoltaX' };
 export const dynamic = 'force-dynamic';
 
 export default async function PerformancePage() {
-  const [perf, outcomes] = await Promise.all([getPerformance(), getOutcomeStats()]);
+  const [perf, outcomes, dailyPnl] = await Promise.all([getPerformance(), getOutcomeStats(), getDailyPnlHistory(14)]);
   const t = perf.totals;
+  const hasDailyPnl = dailyPnl.some((d) => d.pnl !== 0);
 
   return (
     <>
@@ -72,6 +75,13 @@ export default async function PerformancePage() {
             a bar touching both counts as the stop). Win rate excludes still-open and expired signals.
             Reliability is the conservative Wilson lower bound — historical performance is not a guarantee.
           </p>
+        </Card>
+      ) : null}
+
+      {hasDailyPnl ? (
+        <Card className="mb-6">
+          <CardTitle hint="Realised, closed Deriv contracts (UTC days)">Daily P/L history</CardTitle>
+          <DailyPnlChart data={dailyPnl} />
         </Card>
       ) : null}
 
