@@ -93,6 +93,24 @@ type ProfilesRow = {
   created_at: string;
 };
 
+type SignalOutcomesRow = {
+  id: string;
+  symbol: string;
+  family: string;
+  direction: 'long' | 'short';
+  entry: number;
+  stop_loss: number;
+  take_profit: number;
+  risk_reward: number;
+  methodology_version: string;
+  dedup_key: string;
+  status: 'pending' | 'win' | 'loss' | 'expired';
+  resolution_price: number | null;
+  resolved_at: string | null;
+  bars_to_resolve: number | null;
+  created_at: string;
+};
+
 /** Helper: an Insert type is the Row with server-defaulted columns optional. */
 type Insert<T, Optional extends keyof T> = Omit<T, Optional> & Partial<Pick<T, Optional>>;
 
@@ -116,6 +134,10 @@ export type Database = {
       >;
       audit_logs: TableDef<AuditLogsRow, Insert<AuditLogsRow, 'id' | 'created_at'>>;
       profiles: TableDef<ProfilesRow, Insert<ProfilesRow, 'created_at'>>;
+      signal_outcomes: TableDef<
+        SignalOutcomesRow,
+        Insert<SignalOutcomesRow, 'id' | 'created_at' | 'status' | 'resolution_price' | 'resolved_at' | 'bars_to_resolve'>
+      >;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -37,7 +37,20 @@
       "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m 'fix\\(live\\): wire real market-data freshness into execution safety gate *)",
       "Bash(node -e \"const fs=require\\('fs'\\); const e=fs.existsSync\\('.env.local'\\)?fs.readFileSync\\('.env.local','utf8'\\):''; const has=k=>new RegExp\\('^'+k+'=.+','m'\\).test\\(e\\); console.log\\('DERIV_API_TOKEN set:', has\\('DERIV_API_TOKEN'\\)\\); console.log\\('VOLTAX_DATA_SOURCE:', \\(e.match\\(/^VOLTAX_DATA_SOURCE=\\(.*\\)$/m\\)||[]\\)[1] || '\\(unset -> live\\)'\\)\")",
       "Bash(git -c 'user.name=VoltaX Builder' -c user.email=brayohmisk94@gmail.com commit -q -m 'fix\\(live\\): surface Deriv authorize error + clearer zero-balance risk gate *)",
-      "Bash(rm -f /tmp/deriv-auth-probe.mjs && echo \"removed probe\")"
+      "Bash(rm -f /tmp/deriv-auth-probe.mjs && echo \"removed probe\")",
+      "Bash(awk -F= '/^AI_MODEL=/{print \"AI_MODEL=\"$2} /^AI_API_KEY=/{k=$2; print \"AI_API_KEY prefix=\"substr\\(k,1,6\\)\"... len=\"length\\(k\\)} /^VOLTAX_DATA_SOURCE=/{print \"DATA_SOURCE=\"$2} /^DERIV_WS_URL=/{print \"WS=\"$2}' .env.local)",
+      "Bash(npm run *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git remote *)",
+      "Bash(git ls-remote *)",
+      "Bash(awk -F= '/^NEXT_PUBLIC_APP_URL=/{print $2}' .env.local)",
+      "Bash(git commit --allow-empty -m ' *)",
+      "Bash(grep -E \"refs/heads/\\(master|main\\)$\")",
+      "Bash(curl -s -o /tmp/ic.svg -w \"HTTP %{http_code}  type=%{content_type}\\\\n\" \"https://volta-x.vercel.app/icon.svg\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /tmp/cr.json -w \"HTTP %{http_code}\\\\n\" \"https://volta-x.vercel.app/api/cron/alerts\")",
+      "Bash(git rm *)"
     ]
   }
 }

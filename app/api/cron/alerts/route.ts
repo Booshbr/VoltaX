@@ -11,8 +11,14 @@
  */
 import { NextResponse } from 'next/server';
 import { getMarketView } from '@/lib/market/source';
+import { getLiveCandles } from '@/lib/deriv/live';
 import { dispatchQualifiedAlertsPersistent } from '@/lib/notifications/dispatch';
 import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
+import {
+  recordPendingOutcomes,
+  resolvePendingOutcomes,
+  type OutcomeSeed,
+} from '@/lib/supabase/repositories/outcomes';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -45,11 +51,39 @@ export async function GET(request: Request) {
       }));
 
     const result = await dispatchQualifiedAlertsPersistent(signals);
+
+    // Track and resolve real signal outcomes (only from live data, to keep the
+    // evidence base honest). Failures never break the alert run.
+    let outcomes: { tracked: number; resolved: Awaited<ReturnType<typeof resolvePendingOutcomes>> } | null = null;
+    try {
+      if (view.source === 'live') {
+        const seeds: OutcomeSeed[] = view.evaluations
+          .filter((e) => e.qualified && e.direction && e.risk)
+          .map((e) => ({
+            symbol: e.instrumentSymbol,
+            family: e.family,
+            direction: e.direction as 'long' | 'short',
+            entry: e.risk!.entry,
+            stopLoss: e.risk!.stopLoss,
+            takeProfit: e.risk!.takeProfits[0]?.price ?? e.risk!.entry,
+            riskReward: e.riskReward,
+            methodologyVersion: e.methodologyVersion,
+            createdAtSec: Math.floor(Date.now() / 1000),
+          }));
+        const { inserted } = await recordPendingOutcomes(seeds);
+        const resolved = await resolvePendingOutcomes((symbol) => getLiveCandles(symbol, '1m'));
+        outcomes = { tracked: inserted, resolved };
+      }
+    } catch {
+      // outcome tracking is best-effort
+    }
+
     return NextResponse.json({
       ok: true,
       source: view.source,
       qualified: signals.length,
       ...result,
+      outcomes,
     });
   } catch (err) {
     // Never surface an internal failure as a 500 storm to the scheduler.
