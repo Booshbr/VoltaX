@@ -20,6 +20,26 @@ export interface QualifiedSignalInput {
   methodologyVersion: string;
 }
 
+/** Public base URL for deep links. Only a public https origin qualifies, so a
+ * localhost dev value never produces a broken alert link. */
+export function publicBaseUrl(): string | undefined {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!raw) return undefined;
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:') return undefined;
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return undefined;
+    return u.origin;
+  } catch {
+    return undefined;
+  }
+}
+
+function signalUrl(symbol: string): string | undefined {
+  const base = publicBaseUrl();
+  return base ? `${base}/signals/${encodeURIComponent(symbol)}` : undefined;
+}
+
 /** Build a detailed and still evidence-bound alert. */
 export function buildQualifiedNotification(s: QualifiedSignalInput): { key: string; notification: AppNotification } {
   const direction = s.direction === 'long' ? '🟢 BUY / LONG' : '🔴 SELL / SHORT';
@@ -29,6 +49,7 @@ export function buildQualifiedNotification(s: QualifiedSignalInput): { key: stri
     notification: {
       kind: 'qualified_signal',
       title: `📈 Qualified signal — ${s.symbol}`,
+      url: signalUrl(s.symbol),
       body: [
         direction,
         '',
@@ -44,6 +65,22 @@ export function buildQualifiedNotification(s: QualifiedSignalInput): { key: stri
         '⚠️ Analysis only — historical performance is not a guarantee.',
       ].join('\n'),
     },
+  };
+}
+
+/** Warn (once per stale episode) that live data has gone stale and new alerts are
+ * paused — the fail-safe response to an unreliable feed (spec §4). */
+export function buildFeedStaleNotification(minutesStale: number): AppNotification {
+  return {
+    kind: 'data_feed_failure',
+    title: '⚠️ Data feed stale — alerts paused',
+    url: publicBaseUrl() ? `${publicBaseUrl()}/data-quality` : undefined,
+    body: [
+      `The market data feed has not updated in ~${Math.round(minutesStale)} min.`,
+      '',
+      'VoltaX has paused NEW signal alerts until the feed recovers (fail-safe).',
+      'No action needed — you will be alerted again once live data resumes.',
+    ].join('\n'),
   };
 }
 

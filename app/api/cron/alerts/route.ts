@@ -12,7 +12,7 @@
 import { NextResponse } from 'next/server';
 import { getMarketView } from '@/lib/market/source';
 import { getLiveCandles } from '@/lib/deriv/live';
-import { dispatchQualifiedAlertsPersistent } from '@/lib/notifications/dispatch';
+import { dispatchQualifiedAlertsPersistent, dispatchFeedStaleWarning } from '@/lib/notifications/dispatch';
 import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
 import {
   recordPendingOutcomes,
@@ -36,6 +36,21 @@ export async function GET(request: Request) {
 
   try {
     const view = await getMarketView();
+
+    // Fail-safe (spec §4): on a stale feed, pause NEW alerts and warn once — never
+    // emit signals off unreliable data.
+    if (view.feed.quality === 'stale') {
+      const warned = await dispatchFeedStaleWarning(view.feed.lastUpdateMs / 60_000);
+      return NextResponse.json({
+        ok: true,
+        source: view.source,
+        feedStale: true,
+        warned,
+        qualified: 0,
+        sent: 0,
+      });
+    }
+
     const signals: QualifiedSignalInput[] = view.evaluations
       .filter((e) => e.qualified && e.direction && e.risk)
       .map((e) => ({

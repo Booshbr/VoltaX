@@ -18,6 +18,22 @@ export interface AppNotification {
     | 'daily_risk_limit';
   title: string;
   body: string;
+  /** Optional public https link — rendered as a deep-link button on Telegram. */
+  url?: string;
+}
+
+/** A Telegram inline button needs a public https URL; localhost/relative links
+ * would make Telegram reject the whole message, so we drop them. */
+export function telegramButtonUrl(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') return null;
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 export interface NotificationProvider {
@@ -68,10 +84,19 @@ export class TelegramNotificationProvider implements NotificationProvider {
   async send(n: AppNotification): Promise<void> {
     if (!this.isConfigured()) return;
     const text = `VOLTAX ${n.title}\n\n${n.body}`;
+    const payload: Record<string, unknown> = {
+      chat_id: this.chatId,
+      text,
+      disable_web_page_preview: true,
+    };
+    const buttonUrl = telegramButtonUrl(n.url);
+    if (buttonUrl) {
+      payload.reply_markup = { inline_keyboard: [[{ text: '📊 Open in VoltaX', url: buttonUrl }]] };
+    }
     const res = await fetch(`https://api.telegram.org/bot${this.token}/sendMessage`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ chat_id: this.chatId, text }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       // Never throw into signal generation — notifications degrade independently.

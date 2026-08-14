@@ -5,7 +5,7 @@
  * failure can never break signal generation or a page render (spec §39).
  */
 import { NotificationDispatcher, TelegramNotificationProvider } from './index';
-import { buildQualifiedNotification, type QualifiedSignalInput } from './inapp';
+import { buildQualifiedNotification, buildFeedStaleNotification, type QualifiedSignalInput } from './inapp';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const seenKeys = new Set<string>();
@@ -88,4 +88,41 @@ export async function dispatchQualifiedAlertsPersistent(signals: QualifiedSignal
   }
 
   return { configured: true, sent, skipped };
+}
+
+/** Feed-stale warnings de-duplicate over a longer window so a prolonged outage
+ * doesn't spam Telegram every 5-minute tick. */
+const STALE_DEDUP_WINDOW_MS = 6 * 60 * 60_000;
+const STALE_EVENT = 'telegram_feed_stale';
+
+/**
+ * Send a single "feed stale — alerts paused" warning per outage window. Returns
+ * whether a warning was actually sent (false = already warned recently, or no
+ * Telegram configured). Best-effort; never throws.
+ */
+export async function dispatchFeedStaleWarning(minutesStale: number): Promise<boolean> {
+  const telegram = new TelegramNotificationProvider();
+  if (!telegram.isConfigured()) return false;
+
+  const admin = createAdminClient();
+  if (admin) {
+    const cutoff = new Date(Date.now() - STALE_DEDUP_WINDOW_MS).toISOString();
+    const { data: recent } = await admin
+      .from('audit_logs')
+      .select('id')
+      .eq('event', STALE_EVENT)
+      .gte('created_at', cutoff)
+      .limit(1);
+    if (recent?.length) return false;
+  }
+
+  try {
+    await new NotificationDispatcher([telegram]).dispatch(buildFeedStaleNotification(minutesStale));
+    if (admin) {
+      await admin.from('audit_logs').insert({ user_id: null, event: STALE_EVENT, detail: { minutesStale } });
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }

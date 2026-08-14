@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { buildQualifiedNotification, selectNewQualified, type QualifiedSignalInput } from '@/lib/notifications/inapp';
+import { telegramButtonUrl } from '@/lib/notifications/index';
 
 const sig = (over: Partial<QualifiedSignalInput> = {}): QualifiedSignalInput => ({
   symbol: 'R_75',
@@ -29,6 +30,35 @@ describe('buildQualifiedNotification', () => {
 
   it('distinguishes direction in the key', () => {
     expect(buildQualifiedNotification(sig({ direction: 'short' })).key).toBe('qualified:R_75:short');
+  });
+});
+
+describe('deep links', () => {
+  const original = process.env.NEXT_PUBLIC_APP_URL;
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = original;
+  });
+
+  it('adds a public signal URL when the app URL is a public https origin', () => {
+    process.env.NEXT_PUBLIC_APP_URL = 'https://volta-x.vercel.app';
+    expect(buildQualifiedNotification(sig()).notification.url).toBe('https://volta-x.vercel.app/signals/R_75');
+  });
+
+  it('omits the URL for a localhost dev app URL (no broken links)', () => {
+    process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
+    expect(buildQualifiedNotification(sig()).notification.url).toBeUndefined();
+  });
+});
+
+describe('telegramButtonUrl', () => {
+  it('accepts a public https URL', () => {
+    expect(telegramButtonUrl('https://volta-x.vercel.app/signals/R_75')).toBe('https://volta-x.vercel.app/signals/R_75');
+  });
+  it('rejects http, localhost, and malformed URLs', () => {
+    expect(telegramButtonUrl('http://volta-x.vercel.app')).toBeNull();
+    expect(telegramButtonUrl('https://localhost:3000/x')).toBeNull();
+    expect(telegramButtonUrl('not a url')).toBeNull();
+    expect(telegramButtonUrl(undefined)).toBeNull();
   });
 });
 
