@@ -18,5 +18,6 @@ create index if not exists idx_push_subs_user on push_subscriptions(user_id);
 
 alter table push_subscriptions enable row level security;
 
+drop policy if exists "own push subscriptions" on push_subscriptions;
 create policy "own push subscriptions" on push_subscriptions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

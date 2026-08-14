@@ -33,5 +33,6 @@ alter table signal_outcomes enable row level security;
 
 -- Readable by any authenticated user; writes reserved to the service role
 -- (which bypasses RLS, so no write policy is granted to normal users).
+drop policy if exists "read signal outcomes" on signal_outcomes;
 create policy "read signal outcomes" on signal_outcomes
   for select using (auth.role() = 'authenticated');
