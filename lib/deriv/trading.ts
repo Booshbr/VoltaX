@@ -41,7 +41,7 @@ export async function executeSignalOrder(
   feed: DataQualityStatus,
 ): Promise<ExecuteResult> {
   const cfg = getDerivConfig();
-  const live = getLiveState();
+  const live = await getLiveState();
   const riskConfig = DEFAULT_STRATEGY.risk;
 
   // A dedicated authorized connection (never the shared public-data client).

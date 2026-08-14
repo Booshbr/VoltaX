@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: 'VoltaX — Trading Intelligence',
   description:
     'Statistical trading analysis, market ranking, backtesting and paper trading for Deriv synthetic indices.',
+  icons: { icon: '/icon.svg' },
 };
 
 export const viewport: Viewport = {

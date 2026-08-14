@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="VoltaX">
+  <defs>
+    <linearGradient id="v" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="17" fill="#101426"/>
+  <path d="M35 7 14 35h15l-1 22 22-31H35z" fill="url(#v)"/>
+  <path d="M38 15 24 34h10l-1 12 13-19H35z" fill="#fff" opacity=".9"/>
+</svg>

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * stop. Live execution requires an account token AND explicit enablement — never
  * automatic. */
 export default async function LiveTradingPage() {
-  const initialState = getLiveState();
+  const initialState = await getLiveState();
   const hasToken = getDerivConfig().hasAccount;
   const [{ evaluations }, account] = await Promise.all([getMarketView(), getDerivAccountSummary()]);
 

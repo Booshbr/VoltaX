@@ -1,68 +1,68 @@
 /**
- * Live-trading controller (spec §18, §42). SERVER-SIDE. Holds the global switches
- * that gate real execution: an explicit ENABLE flag (defaults OFF — VoltaX never
- * auto-switches paper→live) and an EMERGENCY STOP kill switch. State is in-memory
- * for this single-user build; a multi-user deployment would persist it per user
- * (e.g. `user_settings`) — the interface is the same either way.
+ * Live-trading controller. The opt-in state lives in secure cookies rather than
+ * server memory, so it remains coherent when Vercel serves consecutive actions
+ * from different function instances. It remains deliberately per-browser and
+ * expires after eight hours; any new device starts safely in paper mode.
  */
+import { cookies } from 'next/headers';
 import { getDerivConfig } from '@/lib/deriv/config';
 
+const LIVE_COOKIE = 'voltax-live-enabled';
+const STOP_COOKIE = 'voltax-emergency-stop';
+const STAMP_COOKIE = 'voltax-live-updated-at';
+const MAX_AGE_SECONDS = 8 * 60 * 60;
+
 export interface LiveControllerState {
-  /** Explicitly enabled by the user. Defaults OFF. */
   enabled: boolean;
-  /** Emergency stop active → no new execution. */
   emergencyStop: boolean;
-  /** A Deriv account token is configured server-side. */
   accountConnected: boolean;
   updatedAt: string;
 }
 
-// Module-level state (single-user). Both switches start in the safe position.
-let enabled = false;
-let emergencyStop = false;
-let updatedAt = new Date(0).toISOString();
-
-function stamp() {
-  updatedAt = new Date().toISOString();
-}
-
-export function getLiveState(): LiveControllerState {
+export async function getLiveState(): Promise<LiveControllerState> {
+  const store = await cookies();
+  const emergencyStop = store.get(STOP_COOKIE)?.value === '1';
   return {
-    enabled,
+    enabled: store.get(LIVE_COOKIE)?.value === '1' && !emergencyStop,
     emergencyStop,
     accountConnected: getDerivConfig().hasAccount,
-    updatedAt,
+    updatedAt: store.get(STAMP_COOKIE)?.value ?? new Date(0).toISOString(),
   };
 }
 
-/** Enable live trading. Requires an account token — refuses otherwise. */
-export function enableLive(): { ok: boolean; error?: string } {
-  if (!getDerivConfig().hasAccount) {
-    return { ok: false, error: 'Configure DERIV_API_TOKEN and DERIV_ACCOUNT_ID first.' };
-  }
-  if (emergencyStop) {
-    return { ok: false, error: 'Clear the emergency stop before enabling live trading.' };
-  }
-  enabled = true;
-  stamp();
+export async function enableLive(): Promise<{ ok: boolean; error?: string }> {
+  if (!getDerivConfig().hasAccount) return { ok: false, error: 'Configure DERIV_API_TOKEN and DERIV_ACCOUNT_ID first.' };
+  const store = await cookies();
+  if (store.get(STOP_COOKIE)?.value === '1') return { ok: false, error: 'Clear the emergency stop before enabling live trading.' };
+  stamp(store);
+  store.set(LIVE_COOKIE, '1', cookieOptions());
   return { ok: true };
 }
 
-/** Disable live trading (returns to paper-only). */
-export function disableLive(): void {
-  enabled = false;
-  stamp();
+export async function disableLive(): Promise<void> {
+  const store = await cookies();
+  stamp(store);
+  store.set(LIVE_COOKIE, '0', cookieOptions());
 }
 
-/** Trigger the emergency stop: halts all new execution and disables live trading. */
-export function triggerEmergencyStop(): void {
-  emergencyStop = true;
-  enabled = false;
-  stamp();
+export async function triggerEmergencyStop(): Promise<void> {
+  const store = await cookies();
+  stamp(store);
+  store.set(STOP_COOKIE, '1', cookieOptions());
+  store.set(LIVE_COOKIE, '0', cookieOptions());
 }
 
-/** Clear the emergency stop. Live trading remains OFF until explicitly re-enabled. */
-export function clearEmergencyStop(): void {
-  emergencyStop = false;
-  stamp();
+export async function clearEmergencyStop(): Promise<void> {
+  const store = await cookies();
+  stamp(store);
+  store.set(STOP_COOKIE, '0', cookieOptions());
+  store.set(LIVE_COOKIE, '0', cookieOptions());
+}
+
+function stamp(store: Awaited<ReturnType<typeof cookies>>) {
+  store.set(STAMP_COOKIE, new Date().toISOString(), cookieOptions());
+}
+
+function cookieOptions() {
+  return { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: MAX_AGE_SECONDS };
 }

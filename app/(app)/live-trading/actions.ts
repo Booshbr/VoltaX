@@ -24,29 +24,29 @@ export async function enableLiveAction(): Promise<{ state: LiveControllerState; 
   const account = await getDerivAccountSummary();
   if (!account.connected) {
     return {
-      state: getLiveState(),
+      state: await getLiveState(),
       error: account.error ?? 'Deriv account verification failed. Live trading remains off.',
     };
   }
-  const res = enableLive();
+  const res = await enableLive();
   revalidatePath('/live-trading');
-  return { state: getLiveState(), error: res.ok ? undefined : res.error };
+  return { state: await getLiveState(), error: res.ok ? undefined : res.error };
 }
 
 export async function disableLiveAction(): Promise<LiveControllerState> {
-  disableLive();
+  await disableLive();
   revalidatePath('/live-trading');
   return getLiveState();
 }
 
 export async function emergencyStopAction(): Promise<LiveControllerState> {
-  triggerEmergencyStop();
+  await triggerEmergencyStop();
   revalidatePath('/live-trading');
   return getLiveState();
 }
 
 export async function clearEmergencyStopAction(): Promise<LiveControllerState> {
-  clearEmergencyStop();
+  await clearEmergencyStop();
   revalidatePath('/live-trading');
   return getLiveState();
 }

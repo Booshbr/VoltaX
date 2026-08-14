@@ -13,12 +13,15 @@ export function CandleChart({
   swings = [],
   zones = [],
   height = 320,
+  currentPrice,
 }: {
   candles: Candle[];
   levels?: Level[];
   swings?: SwingPoint[];
   zones?: Zone[];
   height?: number;
+  /** Latest verified price. Defaults to the latest candle close. */
+  currentPrice?: number;
 }) {
   if (candles.length === 0) return <div className="text-sm text-muted">No candle data.</div>;
 
@@ -49,6 +52,9 @@ export function CandleChart({
   const idxOfTime = (time: number) => Math.round(((time - firstTime) / span) * (n - 1));
   const gridRows = 5;
   const gridColumns = 6;
+  const latestPrice = currentPrice ?? candles[n - 1]!.close;
+  const currentY = y(latestPrice);
+  const currentTone = latestPrice >= candles[n - 1]!.open ? 'var(--bull)' : 'var(--bear)';
 
   return (
     <div className="overflow-x-auto rounded-md border border-border/70 bg-surface-2/30 p-1">
@@ -115,6 +121,16 @@ export function CandleChart({
             </g>
           );
         })}
+
+        {/* Latest quote: this line moves as the tick stream updates the live candle. */}
+        <g aria-label={`Current price ${latestPrice.toFixed(priceDecimals)}`}>
+          <line x1={padLeft} x2={plotRight} y1={currentY} y2={currentY} stroke={`hsl(${currentTone})`} strokeDasharray="3 3" strokeWidth={1.2} opacity={0.95} />
+          <circle cx={xAt(n - 1)} cy={currentY} r={3.2} fill={`hsl(${currentTone})`} stroke="hsl(var(--surface))" strokeWidth={1.2} />
+          <rect x={plotRight + 2} y={currentY - 10} width={73} height={20} rx={4} fill={`hsl(${currentTone})`} />
+          <text x={plotRight + 38.5} y={currentY + 3.5} textAnchor="middle" fill="hsl(var(--bg))" fontSize={10} fontWeight={700} className="tnum">
+            {latestPrice.toFixed(priceDecimals)}
+          </text>
+        </g>
 
         {swings.map((swing, index) => {
           const candleIndex = swing.index >= 0 && swing.index < n ? swing.index : idxOfTime(swing.time);
