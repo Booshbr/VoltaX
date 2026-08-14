@@ -7,8 +7,31 @@
  */
 import type { EngineEvaluation } from '@/lib/signals/engine';
 import { createClient, getCurrentUser } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
 import { writeAudit } from './audit';
 import type { Database, Json } from '@/lib/supabase/database.types';
+
+/**
+ * Ensure the running methodology version exists in strategy_versions, so the
+ * signals FK (methodology_version → strategy_versions) is satisfied. Self-healing
+ * via the service role (the table is service-role-write only), cached per instance.
+ */
+let strategyVersionEnsured = false;
+async function ensureStrategyVersion(): Promise<void> {
+  if (strategyVersionEnsured) return;
+  const admin = createAdminClient();
+  if (!admin) return;
+  try {
+    await admin.from('strategy_versions').upsert(
+      { version: DEFAULT_STRATEGY.version, config: DEFAULT_STRATEGY as unknown as Json, notes: 'auto-registered' },
+      { onConflict: 'version', ignoreDuplicates: true },
+    );
+    strategyVersionEnsured = true;
+  } catch {
+    // Non-fatal: if seeding fails the insert below will surface the FK error.
+  }
+}
 
 type SignalInsert = Database['public']['Tables']['signals']['Insert'];
 type ReasonInsert = Database['public']['Tables']['signal_reasons']['Insert'];
@@ -85,6 +108,8 @@ export async function persistSignal(e: EngineEvaluation): Promise<PersistResult>
   const user = await getCurrentUser();
   if (!user) return { error: 'You must be signed in to save signals.' };
   if (!e.direction || !e.risk) return { error: 'Only directional setups can be saved.' };
+
+  await ensureStrategyVersion();
 
   const { data, error } = await supabase
     .from('signals')

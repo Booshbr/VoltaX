@@ -9,6 +9,7 @@ import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
 import { dispatchQualifiedAlerts } from '@/lib/notifications/dispatch';
 import { formatMoney, formatPercent, titleCase } from '@/lib/utils/format';
 import { recordQualifiedSignals } from '@/lib/supabase/repositories/signals';
+import { recordPendingOutcomes, type OutcomeSeed } from '@/lib/supabase/repositories/outcomes';
 import { getDerivAccountSummary } from '@/lib/deriv/account';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +36,29 @@ export default async function DashboardPage() {
       methodologyVersion: evaluation.methodologyVersion,
     }));
 
-  await Promise.all([dispatchQualifiedAlerts(qualifiedSignals), recordQualifiedSignals(qualified)]);
+  // Track qualified signals for win/loss outcomes too (only real, live data), so the
+  // History signal log populates from browsing — not just the 5-minute cloud cron.
+  const outcomeSeeds: OutcomeSeed[] = isLive
+    ? qualified
+        .filter((e) => e.direction && e.risk)
+        .map((e) => ({
+          symbol: e.instrumentSymbol,
+          family: e.family,
+          direction: e.direction as 'long' | 'short',
+          entry: e.risk!.entry,
+          stopLoss: e.risk!.stopLoss,
+          takeProfit: e.risk!.takeProfits[0]?.price ?? e.risk!.entry,
+          riskReward: e.riskReward,
+          methodologyVersion: e.methodologyVersion,
+          createdAtSec: Math.floor(Date.now() / 1000),
+        }))
+    : [];
+
+  await Promise.all([
+    dispatchQualifiedAlerts(qualifiedSignals),
+    recordQualifiedSignals(qualified),
+    recordPendingOutcomes(outcomeSeeds),
+  ]);
 
   return (
     <>

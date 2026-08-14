@@ -93,6 +93,13 @@ type ProfilesRow = {
   created_at: string;
 };
 
+type StrategyVersionsRow = {
+  version: string;
+  config: Json;
+  created_at: string;
+  notes: string | null;
+};
+
 type UserSettingsRow = {
   user_id: string;
   theme: 'dark' | 'light' | 'system';
@@ -153,6 +160,7 @@ export type Database = {
       >;
       audit_logs: TableDef<AuditLogsRow, Insert<AuditLogsRow, 'id' | 'created_at'>>;
       profiles: TableDef<ProfilesRow, Insert<ProfilesRow, 'created_at'>>;
+      strategy_versions: TableDef<StrategyVersionsRow, Insert<StrategyVersionsRow, 'created_at' | 'notes'>>;
       user_settings: TableDef<
         UserSettingsRow,
         Insert<UserSettingsRow, 'theme' | 'trading_mode' | 'risk_config' | 'signal_prefs' | 'updated_at'>
