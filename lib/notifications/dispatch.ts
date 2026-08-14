@@ -5,8 +5,14 @@
  * failure can never break signal generation or a page render (spec §39).
  */
 import { NotificationDispatcher, TelegramNotificationProvider } from './index';
+import { WebPushNotificationProvider } from './webpush';
 import { buildQualifiedNotification, buildFeedStaleNotification, type QualifiedSignalInput } from './inapp';
 import { createAdminClient } from '@/lib/supabase/admin';
+
+/** Server-deliverable channels for the cloud cron: Telegram + native Web Push. */
+function serverProviders() {
+  return [new TelegramNotificationProvider(), new WebPushNotificationProvider()];
+}
 
 const seenKeys = new Set<string>();
 
@@ -46,11 +52,10 @@ const ALERT_EVENT = 'telegram_alert';
  * Fail-safe: any error is swallowed so a notification issue never breaks the cron.
  */
 export async function dispatchQualifiedAlertsPersistent(signals: QualifiedSignalInput[]): Promise<AlertDispatchResult> {
-  const telegram = new TelegramNotificationProvider();
-  if (!telegram.isConfigured()) return { configured: false, sent: 0, skipped: 0 };
+  const dispatcher = new NotificationDispatcher(serverProviders());
+  if (dispatcher.configured().length === 0) return { configured: false, sent: 0, skipped: 0 };
 
   const admin = createAdminClient();
-  const dispatcher = new NotificationDispatcher([telegram]);
   const cutoff = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString();
   let sent = 0;
   let skipped = 0;
@@ -101,8 +106,8 @@ const STALE_EVENT = 'telegram_feed_stale';
  * Telegram configured). Best-effort; never throws.
  */
 export async function dispatchFeedStaleWarning(minutesStale: number): Promise<boolean> {
-  const telegram = new TelegramNotificationProvider();
-  if (!telegram.isConfigured()) return false;
+  const dispatcher = new NotificationDispatcher(serverProviders());
+  if (dispatcher.configured().length === 0) return false;
 
   const admin = createAdminClient();
   if (admin) {
@@ -117,7 +122,7 @@ export async function dispatchFeedStaleWarning(minutesStale: number): Promise<bo
   }
 
   try {
-    await new NotificationDispatcher([telegram]).dispatch(buildFeedStaleNotification(minutesStale));
+    await dispatcher.dispatch(buildFeedStaleNotification(minutesStale));
     if (admin) {
       await admin.from('audit_logs').insert({ user_id: null, event: STALE_EVENT, detail: { minutesStale } });
     }

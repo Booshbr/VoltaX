@@ -93,6 +93,16 @@ type ProfilesRow = {
   created_at: string;
 };
 
+type PushSubscriptionsRow = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+};
+
 type SignalOutcomesRow = {
   id: string;
   symbol: string;
@@ -137,6 +147,10 @@ export type Database = {
       signal_outcomes: TableDef<
         SignalOutcomesRow,
         Insert<SignalOutcomesRow, 'id' | 'created_at' | 'status' | 'resolution_price' | 'resolved_at' | 'bars_to_resolve'>
+      >;
+      push_subscriptions: TableDef<
+        PushSubscriptionsRow,
+        Insert<PushSubscriptionsRow, 'id' | 'created_at' | 'user_agent'>
       >;
     };
     Views: Record<string, never>;

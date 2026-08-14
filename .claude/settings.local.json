@@ -50,7 +50,14 @@
       "Bash(curl -s -o /tmp/ic.svg -w \"HTTP %{http_code}  type=%{content_type}\\\\n\" \"https://volta-x.vercel.app/icon.svg\")",
       "Read(//tmp/**)",
       "Bash(curl -s -o /tmp/cr.json -w \"HTTP %{http_code}\\\\n\" \"https://volta-x.vercel.app/api/cron/alerts\")",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(node -e \"console.log\\(require\\('sharp/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\('next', require\\('next/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('web-push/package.json'\\).version\\)\")",
+      "Bash(node -e \"const s=require\\('sharp'\\); s\\('app/icon.svg'\\).resize\\(192,192\\).png\\(\\).toBuffer\\(\\).then\\(b=>console.log\\('sharp OK bytes',b.length\\)\\).catch\\(e=>console.log\\('sharp FAIL',e.message\\)\\)\")",
+      "Bash(mkdir -p public/icons)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const w=require\\('web-push'\\);const k=w.generateVAPIDKeys\\(\\);console.log\\('PUBLIC='+k.publicKey\\);console.log\\('PRIVATE='+k.privateKey\\)\")"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import { PageHeader } from '@/components/page';
 import { AlertsDesk } from '@/components/notifications/alerts-desk';
+import { PushToggle } from '@/components/notifications/push-toggle';
 
 export const metadata = { title: 'Alerts — VoltaX' };
 export const dynamic = 'force-dynamic';
@@ -10,8 +11,11 @@ export default function AlertsPage() {
     <>
       <PageHeader
         title="Alerts"
-        subtitle="In-app, browser and Telegram notifications for qualified signals and system events."
+        subtitle="In-app, browser, phone push and Telegram notifications for qualified signals and system events."
       />
+      <div className="mb-5">
+        <PushToggle />
+      </div>
       <AlertsDesk telegramConfigured={telegramConfigured} />
     </>
   );

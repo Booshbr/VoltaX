@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   title: 'VoltaX — Trading Intelligence',
   description:
     'Statistical trading analysis, market ranking, backtesting and paper trading for Deriv synthetic indices.',
-  icons: { icon: '/icon.svg' },
+  manifest: '/manifest.webmanifest',
+  icons: { icon: '/icon.svg', apple: '/apple-touch-icon.png' },
+  appleWebApp: { capable: true, title: 'VoltaX', statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {
