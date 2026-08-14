@@ -8,8 +8,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSupabasePublicEnv } from './env';
 
-/** Paths that never require authentication. */
-const PUBLIC_PREFIXES = ['/login', '/auth', '/_next', '/favicon', '/api/health'];
+/** Paths that never require authentication. `/api/cron` is guarded by its own
+ * CRON_SECRET, so it must bypass the session gate to be reachable by a scheduler. */
+const PUBLIC_PREFIXES = ['/login', '/auth', '/_next', '/favicon', '/api/health', '/api/cron'];
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   const env = getSupabasePublicEnv();
