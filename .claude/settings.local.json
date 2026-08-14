@@ -58,7 +58,13 @@
       "Bash(mkdir -p public/icons)",
       "Bash(node -e ' *)",
       "Bash(node -e \"const w=require\\('web-push'\\);const k=w.generateVAPIDKeys\\(\\);console.log\\('PUBLIC='+k.publicKey\\);console.log\\('PRIVATE='+k.privateKey\\)\")",
-      "Bash(git commit -q -m ' *)"
+      "Bash(git commit -q -m ' *)",
+      "Bash(awk -F= '/^DERIV_/{k=$1; v=$2; if\\(k==\"DERIV_API_TOKEN\"\\){print k\"=present len=\"length\\(v\\)} else print k\"=\"v}' .env.local)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"https://volta-x.vercel.app/api/deriv/diagnose?symbol=BOOM300N\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"https://volta-x.vercel.app/icon.svg\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"https://volta-x.vercel.app/api/live/risk\")",
+      "Bash(rmdir app/api/deriv)",
+      "Bash(rm -rf .next)"
     ]
   }
 }

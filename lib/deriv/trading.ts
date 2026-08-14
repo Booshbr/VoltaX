@@ -134,7 +134,9 @@ export async function executeSignalOrder(
       basis: 'stake',
       contract_type: params.direction === 'long' ? 'MULTUP' : 'MULTDOWN',
       currency: params.currency,
-      symbol: params.symbol,
+      // The new Deriv Options API keys the instrument as `underlying_symbol`
+      // (confirmed by probe: `symbol` is rejected as "Properties not allowed").
+      underlying_symbol: params.symbol,
       multiplier: params.multiplier,
       limit_order: { stop_loss: params.stopLoss, take_profit: params.takeProfit },
     });
