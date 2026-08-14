@@ -5,7 +5,7 @@ import type { DerivAccountSummary } from '@/lib/deriv/account';
 import { getLiveRiskSnapshot } from '@/lib/deriv/positions';
 import { getMarketView } from '@/lib/market/source';
 import { evaluateGuardrails } from '@/lib/trading/guardrails';
-import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
+import { getUserRiskSettings } from '@/lib/supabase/repositories/settings';
 import { LiveTradingDesk, type LiveSignal } from '@/components/live/live-trading-desk';
 import { LiveRiskPanel } from '@/components/live/live-risk-panel';
 
@@ -17,17 +17,16 @@ export const dynamic = 'force-dynamic';
 export default async function LiveTradingPage() {
   const initialState = await getLiveState();
   const hasToken = getDerivConfig().hasAccount;
-  const [{ evaluations }, snapshot] = await Promise.all([getMarketView(), getLiveRiskSnapshot()]);
+  const [{ evaluations }, snapshot, risk] = await Promise.all([getMarketView(), getLiveRiskSnapshot(), getUserRiskSettings()]);
 
   // Derive the account summary from the risk snapshot (one Deriv connection).
   const account: DerivAccountSummary = snapshot.connected
     ? { connected: true, balance: snapshot.balance, currency: snapshot.currency, isVirtual: snapshot.isVirtual }
     : { connected: false, error: snapshot.error };
 
-  const risk = DEFAULT_STRATEGY.risk;
   const guardrails = evaluateGuardrails({
     equity: snapshot.balance,
-    openStake: snapshot.openStake,
+    openRisk: snapshot.openRisk,
     openCount: snapshot.positions.length,
     dailyRealizedPnl: snapshot.dailyRealizedPnl,
     limits: { maxOpenRisk: risk.maxOpenRisk, maxDailyRisk: risk.maxDailyRisk, maxOpenTrades: risk.maxOpenTrades },

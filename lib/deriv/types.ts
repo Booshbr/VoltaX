@@ -110,6 +110,11 @@ export interface DerivOpenContractResponse {
     is_valid_to_sell?: 0 | 1;
     underlying?: string;
     longcode?: string;
+    /** Multiplier stop-loss / take-profit as monetary amounts (the real risk cap). */
+    limit_order?: {
+      stop_loss?: { order_amount?: number };
+      take_profit?: { order_amount?: number };
+    };
   };
   error?: DerivError;
 }

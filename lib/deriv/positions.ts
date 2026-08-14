@@ -19,6 +19,8 @@ export interface LivePosition {
   symbol: string;
   longcode: string;
   buyPrice: number;
+  /** Money at risk: the multiplier stop-loss amount, or the full deposit if none. */
+  riskAmount: number;
   profit: number;
   isValidToSell: boolean;
 }
@@ -29,8 +31,10 @@ export interface LiveRiskSnapshot {
   balance: number;
   currency: string;
   positions: LivePosition[];
-  /** Capital committed to open contracts (sum of buy prices). */
+  /** Capital committed to open contracts (sum of buy prices / deposits). */
   openStake: number;
+  /** Money genuinely at risk across open contracts (sum of stop-loss caps). */
+  openRisk: number;
   /** Realised P/L since 00:00 UTC today; negative is a loss. */
   dailyRealizedPnl: number;
   error?: string;
@@ -43,6 +47,7 @@ const EMPTY: LiveRiskSnapshot = {
   currency: 'USD',
   positions: [],
   openStake: 0,
+  openRisk: 0,
   dailyRealizedPnl: 0,
 };
 
@@ -72,11 +77,15 @@ export async function getLiveRiskSnapshot(): Promise<LiveRiskSnapshot> {
         const poc = await client.request<DerivOpenContractResponse>({ proposal_open_contract: 1, contract_id: c.contract_id });
         const p = poc.proposal_open_contract;
         if (p?.is_sold) continue;
+        const buyPrice = p?.buy_price ?? c.buy_price ?? 0;
+        // Risk is capped by the stop-loss; without one, the full deposit is at risk.
+        const stopLossCap = p?.limit_order?.stop_loss?.order_amount;
         positions.push({
           contractId: c.contract_id,
           symbol: c.symbol ?? p?.underlying ?? '—',
           longcode: c.longcode ?? p?.longcode ?? '',
-          buyPrice: p?.buy_price ?? c.buy_price ?? 0,
+          buyPrice,
+          riskAmount: typeof stopLossCap === 'number' && stopLossCap > 0 ? stopLossCap : buyPrice,
           profit: p?.profit ?? 0,
           isValidToSell: p?.is_valid_to_sell === 1,
         });
@@ -104,6 +113,7 @@ export async function getLiveRiskSnapshot(): Promise<LiveRiskSnapshot> {
       currency,
       positions,
       openStake: positions.reduce((sum, p) => sum + p.buyPrice, 0),
+      openRisk: positions.reduce((sum, p) => sum + p.riskAmount, 0),
       dailyRealizedPnl,
     };
   } catch (err) {

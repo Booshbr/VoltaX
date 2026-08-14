@@ -15,8 +15,8 @@ export interface GuardrailLimits {
 
 export interface GuardrailInput {
   equity: number;
-  /** Capital currently committed to open contracts (sum of buy prices). */
-  openStake: number;
+  /** Money currently at risk across open contracts (sum of stop-loss caps). */
+  openRisk: number;
   openCount: number;
   /** Realised P/L so far today; negative is a loss. */
   dailyRealizedPnl: number;
@@ -48,9 +48,9 @@ function pct(part: number, whole: number): number {
 }
 
 export function evaluateGuardrails(input: GuardrailInput): GuardrailState {
-  const { equity, openStake, openCount, dailyRealizedPnl, limits } = input;
+  const { equity, openRisk, openCount, dailyRealizedPnl, limits } = input;
 
-  const exposurePct = pct(Math.max(0, openStake), equity);
+  const exposurePct = pct(Math.max(0, openRisk), equity);
   const exposureBreached = exposurePct >= limits.maxOpenRisk;
 
   const dailyLoss = Math.max(0, -dailyRealizedPnl);

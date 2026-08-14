@@ -3,37 +3,38 @@ import { Card, CardTitle, Badge } from '@/components/ui';
 import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { getCurrentUser } from '@/lib/supabase/server';
+import { getUserRiskSettings } from '@/lib/supabase/repositories/settings';
 import { SignOutButton } from '@/components/sign-out-button';
+import { RiskSettingsForm } from '@/components/settings/risk-settings-form';
 
 export const metadata = { title: 'Settings — VoltaX' };
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  const r = DEFAULT_STRATEGY.risk;
   const supabaseOn = isSupabaseConfigured();
   const user = supabaseOn ? await getCurrentUser() : null;
+  const riskSettings = user ? await getUserRiskSettings() : null;
   return (
     <>
       <PageHeader title="Settings" subtitle="Trading, signals, notifications and appearance." />
 
-      <div className="mb-4">
-        <ConfigNotice title="Persistence requires Supabase">
-          These are the current default configuration values. Saving per-user settings
-          requires configuring Supabase (see docs/SETUP.md). Until then, defaults apply.
-        </ConfigNotice>
-      </div>
+      {!user ? (
+        <div className="mb-4">
+          <ConfigNotice title="Sign in to edit settings">
+            Per-user settings are saved once you sign in with Supabase Auth (see docs/SETUP.md).
+            Until then, the conservative defaults apply.
+          </ConfigNotice>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardTitle>Risk (defaults)</CardTitle>
-          <dl className="space-y-1.5 text-sm">
-            <Row label="Per-trade risk" value={`${(r.perTradeRisk * 100).toFixed(1)}%`} />
-            <Row label="Max daily risk" value={`${(r.maxDailyRisk * 100).toFixed(1)}%`} />
-            <Row label="Max open risk" value={`${(r.maxOpenRisk * 100).toFixed(1)}%`} />
-            <Row label="Max open trades" value={`${r.maxOpenTrades}`} />
-            <Row label="Max consecutive losses" value={`${r.maxConsecutiveLosses}`} />
-            <Row label="Martingale" value={r.allowMartingale ? 'Enabled' : 'Disabled'} />
-          </dl>
+        <Card className="lg:col-span-2">
+          <CardTitle hint="Applies to live execution only">Risk &amp; execution</CardTitle>
+          {riskSettings ? (
+            <RiskSettingsForm initial={riskSettings} />
+          ) : (
+            <p className="text-sm text-muted">Sign in to customise per-trade risk, stake, limits and multiplier.</p>
+          )}
         </Card>
 
         <Card>

@@ -93,6 +93,15 @@ type ProfilesRow = {
   created_at: string;
 };
 
+type UserSettingsRow = {
+  user_id: string;
+  theme: 'dark' | 'light' | 'system';
+  trading_mode: 'paper' | 'live';
+  risk_config: Json;
+  signal_prefs: Json;
+  updated_at: string;
+};
+
 type PushSubscriptionsRow = {
   id: string;
   user_id: string;
@@ -144,6 +153,10 @@ export type Database = {
       >;
       audit_logs: TableDef<AuditLogsRow, Insert<AuditLogsRow, 'id' | 'created_at'>>;
       profiles: TableDef<ProfilesRow, Insert<ProfilesRow, 'created_at'>>;
+      user_settings: TableDef<
+        UserSettingsRow,
+        Insert<UserSettingsRow, 'theme' | 'trading_mode' | 'risk_config' | 'signal_prefs' | 'updated_at'>
+      >;
       signal_outcomes: TableDef<
         SignalOutcomesRow,
         Insert<SignalOutcomesRow, 'id' | 'created_at' | 'status' | 'resolution_price' | 'resolved_at' | 'bars_to_resolve'>

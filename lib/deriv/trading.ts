@@ -14,13 +14,11 @@ import { DerivAccountSocket } from './account';
 import type { DerivBalanceResponse, DerivBuyResponse, DerivProposalResponse } from './types';
 import { evaluateLiveExecution, type LiveExecutionContext, type SafetyResult } from '@/lib/trading/live-safety';
 import { getLiveState } from '@/lib/trading/live-controller';
-import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
+import { getUserRiskSettings } from '@/lib/supabase/repositories/settings';
+import { toRiskConfig } from '@/lib/config/risk-settings';
 import { initialGuardState } from '@/lib/trading/risk';
 import type { EngineEvaluation } from '@/lib/signals/engine';
 import type { DataQualityStatus, Instrument } from '@/lib/types';
-
-/** Default multiplier when the symbol's list isn't queried. Overridable via env. */
-const DEFAULT_MULTIPLIER = Number(process.env.DERIV_MULTIPLIER ?? 100);
 
 export interface ExecuteResult {
   ok: boolean;
@@ -42,7 +40,8 @@ export async function executeSignalOrder(
 ): Promise<ExecuteResult> {
   const cfg = getDerivConfig();
   const live = await getLiveState();
-  const riskConfig = DEFAULT_STRATEGY.risk;
+  const settings = await getUserRiskSettings();
+  const riskConfig = toRiskConfig(settings);
 
   // A dedicated authorized connection (never the shared public-data client).
   let client: DerivAccountSocket | null = null;
@@ -72,10 +71,13 @@ export async function executeSignalOrder(
   }
 
   // Risk sizing from the REAL balance: risk budget = balance × per-trade risk.
-  const riskAmount = Math.max(0, balance * riskConfig.perTradeRisk);
-  const stake = Number(Math.max(riskAmount, 1).toFixed(2));
-  const stopLoss = Number((riskAmount * 0.95).toFixed(2));
-  const takeProfit = Number((riskAmount * (evaluation.riskReward || riskConfig.perTradeRisk)).toFixed(2));
+  // The deposit stake is either the user's fixed stake or the auto amount (>= $1).
+  const riskAmount = Math.max(0, balance * settings.perTradeRisk);
+  const autoStake = Math.max(riskAmount, 1);
+  const stake = Number((settings.fixedStake ?? autoStake).toFixed(2));
+  // Money at risk (stop-loss) never exceeds the deposit.
+  const stopLoss = Number(Math.min(riskAmount * 0.95, stake * 0.95).toFixed(2));
+  const takeProfit = Number((riskAmount * (evaluation.riskReward || settings.perTradeRisk)).toFixed(2));
 
   const safetyCtx: LiveExecutionContext = {
     evaluation,
@@ -119,7 +121,7 @@ export async function executeSignalOrder(
     symbol: instrument.symbol,
     direction: evaluation.direction,
     amount: stake,
-    multiplier: DEFAULT_MULTIPLIER,
+    multiplier: settings.multiplier,
     currency,
     stopLoss,
     takeProfit,

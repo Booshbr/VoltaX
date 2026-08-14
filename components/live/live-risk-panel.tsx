@@ -64,10 +64,10 @@ export function LiveRiskPanel({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Meter
-          label="Open exposure"
+          label="Open risk"
           value={guardrails.exposurePct}
           limit={guardrails.exposureLimitPct}
-          detail={`${formatMoney(snapshot.openStake)} of ${formatMoney(snapshot.balance)}`}
+          detail={`${formatMoney(snapshot.openRisk)} at risk of ${formatMoney(snapshot.balance)}`}
         />
         <Meter
           label="Daily loss"

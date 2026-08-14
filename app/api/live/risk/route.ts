@@ -5,18 +5,17 @@
 import { NextResponse } from 'next/server';
 import { getLiveRiskSnapshot } from '@/lib/deriv/positions';
 import { evaluateGuardrails } from '@/lib/trading/guardrails';
-import { DEFAULT_STRATEGY } from '@/lib/config/strategy';
+import { getUserRiskSettings } from '@/lib/supabase/repositories/settings';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const snapshot = await getLiveRiskSnapshot();
+  const [snapshot, risk] = await Promise.all([getLiveRiskSnapshot(), getUserRiskSettings()]);
   if (!snapshot.connected) return NextResponse.json({ connected: false });
 
-  const risk = DEFAULT_STRATEGY.risk;
   const g = evaluateGuardrails({
     equity: snapshot.balance,
-    openStake: snapshot.openStake,
+    openRisk: snapshot.openRisk,
     openCount: snapshot.positions.length,
     dailyRealizedPnl: snapshot.dailyRealizedPnl,
     limits: { maxOpenRisk: risk.maxOpenRisk, maxDailyRisk: risk.maxDailyRisk, maxOpenTrades: risk.maxOpenTrades },
