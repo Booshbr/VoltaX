@@ -20,15 +20,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'DERIV_API_TOKEN + DERIV_ACCOUNT_ID not configured.' });
   }
 
-  const base = { amount: 1, basis: 'stake', currency: 'USD', multiplier: 100 };
+  // Confirmed from the bare-proposal error: required = currency, underlying_symbol,
+  // contract_type. The instrument field is `underlying_symbol`. Now confirm the full
+  // multiplier shape (multiplier + limit_order) and whether MULT* is valid here.
+  const us = { currency: 'USD', underlying_symbol: symbol };
   const variants: Array<{ label: string; payload: Record<string, unknown> }> = [
-    { label: 'bare-proposal (reveals required fields)', payload: { proposal: 1 } },
-    { label: 'classic symbol + MULTUP', payload: { proposal: 1, ...base, contract_type: 'MULTUP', symbol } },
-    { label: 'underlying instead of symbol', payload: { proposal: 1, ...base, contract_type: 'MULTUP', underlying: symbol } },
-    { label: 'instrument instead of symbol', payload: { proposal: 1, ...base, contract_type: 'MULTUP', instrument: symbol } },
-    { label: 'symbol + product_type multiplier', payload: { proposal: 1, ...base, contract_type: 'MULTUP', symbol, product_type: 'multiplier' } },
-    { label: 'symbol + limit_order', payload: { proposal: 1, ...base, contract_type: 'MULTUP', symbol, limit_order: { stop_loss: 0.5 } } },
-    { label: 'CALL (rise) symbol + duration', payload: { proposal: 1, amount: 1, basis: 'stake', currency: 'USD', contract_type: 'CALL', symbol, duration: 5, duration_unit: 't' } },
+    { label: 'A minimal MULTUP', payload: { proposal: 1, ...us, contract_type: 'MULTUP' } },
+    { label: 'B + amount/basis', payload: { proposal: 1, ...us, contract_type: 'MULTUP', amount: 1, basis: 'stake' } },
+    { label: 'C + multiplier', payload: { proposal: 1, ...us, contract_type: 'MULTUP', amount: 1, basis: 'stake', multiplier: 100 } },
+    { label: 'D + limit_order (full multiplier)', payload: { proposal: 1, ...us, contract_type: 'MULTUP', amount: 1, basis: 'stake', multiplier: 100, limit_order: { stop_loss: 0.5, take_profit: 1 } } },
+    { label: 'E MULTDOWN full', payload: { proposal: 1, ...us, contract_type: 'MULTDOWN', amount: 1, basis: 'stake', multiplier: 100, limit_order: { stop_loss: 0.5, take_profit: 1 } } },
+    { label: 'F CALL rise + duration', payload: { proposal: 1, ...us, contract_type: 'CALL', amount: 1, basis: 'stake', duration: 5, duration_unit: 't' } },
   ];
 
   let client: DerivAccountSocket | null = null;
