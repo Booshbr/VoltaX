@@ -32,6 +32,7 @@ function baseContext(over: Partial<LiveExecutionContext> = {}): LiveExecutionCon
       guard: initialGuardState(),
       openPositions: 0,
       stake: 100,
+      riskAmount: 100,
       minStake: 1,
       maxStake: 1000,
       accountEquity: 10_000,
@@ -109,6 +110,18 @@ describe('evaluateLiveExecution — all gates must pass', () => {
     const res = evaluateLiveExecution({ ...ctx, risk: { ...ctx.risk, stake: 5000 } });
     expect(res.approved).toBe(false);
     expect(res.rejectionReasons.join(' ')).toMatch(/Stake valid/i);
+  });
+
+  it('measures risk by the stop-loss, not the full deposit stake (small account + multiplier)', () => {
+    // $10 balance with the $1 Deriv minimum stake is ~10% of equity, but the
+    // monetary stop-loss caps the loss at ~$0.10 (~1%) — within the 3%/4% limits.
+    const ctx = baseContext();
+    const res = evaluateLiveExecution({
+      ...ctx,
+      risk: { ...ctx.risk, accountEquity: 10, stake: 1, riskAmount: 0.1, minStake: 1, maxStake: 10 },
+    });
+    const riskCheck = res.checks.find((c) => c.name === 'Risk limits valid');
+    expect(riskCheck?.passed).toBe(true);
   });
 
   it('blocks without explicit per-trade confirmation', () => {

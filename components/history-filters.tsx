@@ -21,6 +21,7 @@ export function HistoryFilters({ symbols }: { symbols: string[] }) {
       <label className="text-xs font-medium text-muted">
         Period
         <select value={period} onChange={(event) => update('period', event.target.value)} className="ml-2 rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-fg">
+          <option value="1d">Today</option>
           <option value="7d">Last 7 days</option>
           <option value="30d">Last 30 days</option>
           <option value="90d">Last 90 days</option>

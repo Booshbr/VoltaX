@@ -1,13 +1,21 @@
 import Link from 'next/link';
 import { PageHeader, ConfigNotice } from '@/components/page';
-import { Card, CardTitle, Badge } from '@/components/ui';
+import { Card, CardTitle, Badge, Stat } from '@/components/ui';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { listSignals } from '@/lib/supabase/repositories/signals';
+import { getSignalLog, type OutcomeLogRow } from '@/lib/supabase/repositories/outcomes';
 import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
 import { HistoryFilters } from '@/components/history-filters';
 
 export const metadata = { title: 'History — VoltaX' };
 export const dynamic = 'force-dynamic';
+
+const OUTCOME_TONE: Record<OutcomeLogRow['status'], 'bull' | 'bear' | 'warn' | 'muted'> = {
+  win: 'bull',
+  loss: 'bear',
+  expired: 'warn',
+  pending: 'muted',
+};
 
 export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ period?: string; symbol?: string }> }) {
   if (!isSupabaseConfigured()) {
@@ -25,10 +33,14 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
   }
 
   const params = await searchParams;
-  const period = params.period === '7d' || params.period === '90d' || params.period === 'all' ? params.period : '30d';
-  const cutoffDays = period === '7d' ? 7 : period === '90d' ? 90 : period === 'all' ? null : 30;
-  const allSignals = await listSignals(500);
+  const period = ['1d', '7d', '90d', 'all'].includes(params.period ?? '') ? params.period! : '30d';
+  const cutoffDays = period === '1d' ? 1 : period === '7d' ? 7 : period === '90d' ? 90 : period === 'all' ? null : 30;
   const cutoff = cutoffDays ? Date.now() - cutoffDays * 24 * 60 * 60_000 : null;
+  const cutoffIso = cutoff ? new Date(cutoff).toISOString() : null;
+
+  const [allSignals, log] = await Promise.all([listSignals(500), getSignalLog(cutoffIso)]);
+  const logRows = (log?.rows ?? []).filter((r) => !params.symbol || r.symbol === params.symbol);
+  const stats = log?.stats;
   const signals = allSignals.filter((signal) =>
     (!params.symbol || signal.instrument_symbol === params.symbol) &&
     (!cutoff || new Date(signal.created_at).getTime() >= cutoff),
@@ -45,6 +57,62 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         subtitle="Persisted signals with their original conditions and methodology version."
       />
       <HistoryFilters symbols={symbols} />
+
+      {stats && stats.total > 0 ? (
+        <Card className="mb-6">
+          <CardTitle hint="Auto-logged by the cloud scanner, resolved against live price">
+            Qualified signal log
+          </CardTitle>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <Stat label="Tracked" value={stats.total} />
+            <Stat label="Wins" value={stats.wins} tone="bull" />
+            <Stat label="Losses" value={stats.losses} tone="bear" />
+            <Stat label="Win rate" value={stats.winRate !== null ? formatPercent(stats.winRate * 100) : '—'} />
+            <Stat label="Reliability" value={stats.wilsonLower !== null ? formatPercent(stats.wilsonLower * 100) : '—'} />
+            <Stat label="Expectancy" value={`${stats.expectancyR >= 0 ? '+' : ''}${stats.expectancyR.toFixed(2)}R`} tone={stats.expectancyR >= 0 ? 'bull' : 'bear'} />
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="px-3 py-2 font-medium">Index</th>
+                  <th className="px-3 py-2 font-medium">Dir</th>
+                  <th className="px-3 py-2 font-medium">Result</th>
+                  <th className="px-3 py-2 text-right font-medium">Entry</th>
+                  <th className="px-3 py-2 text-right font-medium">Stop</th>
+                  <th className="px-3 py-2 text-right font-medium">Target</th>
+                  <th className="px-3 py-2 text-right font-medium">R:R</th>
+                  <th className="px-3 py-2 font-medium">Signalled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logRows.slice(0, 200).map((r, i) => (
+                  <tr key={`${r.symbol}-${r.createdAt}-${i}`} className="border-b border-border/60 last:border-0">
+                    <td className="px-3 py-2">
+                      <Link href={`/signals/${r.symbol}`} className="font-medium text-accent hover:underline">{r.symbol}</Link>
+                    </td>
+                    <td className="px-3 py-2">
+                      <Badge tone={r.direction === 'long' ? 'bull' : 'bear'}>{r.direction === 'long' ? 'LONG' : 'SHORT'}</Badge>
+                    </td>
+                    <td className="px-3 py-2"><Badge tone={OUTCOME_TONE[r.status]}>{titleCase(r.status)}</Badge></td>
+                    <td className="tnum px-3 py-2 text-right">{formatPrice(r.entry)}</td>
+                    <td className="tnum px-3 py-2 text-right text-muted">{formatPrice(r.stopLoss)}</td>
+                    <td className="tnum px-3 py-2 text-right text-muted">{formatPrice(r.takeProfit)}</td>
+                    <td className="tnum px-3 py-2 text-right">{formatRR(r.riskReward)}</td>
+                    <td className="px-3 py-2 text-xs text-muted">{new Date(r.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-muted">
+            Every qualified signal is logged automatically by the cloud scanner (no browser needed) and resolved against live
+            candles — win = first target hit, loss = stop hit (a bar touching both counts as the stop). Win rate excludes still-open
+            and expired signals; reliability is the conservative Wilson lower bound. Historical performance is not a guarantee.
+          </p>
+        </Card>
+      ) : null}
+
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <Card><p className="text-xs font-medium uppercase tracking-wide text-muted">Recorded signals</p><p className="tnum mt-1 text-2xl font-bold text-fg">{signals.length}</p></Card>
         <Card><p className="text-xs font-medium uppercase tracking-wide text-muted">Qualified</p><p className="tnum mt-1 text-2xl font-bold text-accent">{qualified}</p></Card>

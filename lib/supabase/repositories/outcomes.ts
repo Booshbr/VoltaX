@@ -140,6 +140,56 @@ export async function resolvePendingOutcomes(
   return summary;
 }
 
+export interface OutcomeLogRow {
+  symbol: string;
+  family: string;
+  direction: 'long' | 'short';
+  entry: number;
+  stopLoss: number;
+  takeProfit: number;
+  riskReward: number;
+  status: 'pending' | 'win' | 'loss' | 'expired';
+  resolutionPrice: number | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface SignalLog {
+  rows: OutcomeLogRow[];
+  stats: OutcomeStats;
+}
+
+/** Individual tracked signals (newest first) + aggregate stats, optionally since a
+ * cutoff ISO timestamp. Powers the History signal log with date filters. */
+export async function getSignalLog(cutoffIso: string | null, limit = 500): Promise<SignalLog | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  let query = supabase
+    .from('signal_outcomes')
+    .select('symbol, family, direction, entry, stop_loss, take_profit, risk_reward, status, resolution_price, created_at, resolved_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (cutoffIso) query = query.gte('created_at', cutoffIso);
+  const { data, error } = await query;
+  if (error || !data) return null;
+
+  const rows: OutcomeLogRow[] = data.map((r) => ({
+    symbol: r.symbol,
+    family: r.family,
+    direction: r.direction,
+    entry: r.entry,
+    stopLoss: r.stop_loss,
+    takeProfit: r.take_profit,
+    riskReward: r.risk_reward,
+    status: r.status,
+    resolutionPrice: r.resolution_price,
+    createdAt: r.created_at,
+    resolvedAt: r.resolved_at,
+  }));
+  const stats = aggregateOutcomes(rows.map((r) => ({ status: r.status, family: r.family, entry: r.entry, stopLoss: r.stopLoss, takeProfit: r.takeProfit })));
+  return { rows, stats };
+}
+
 /** Aggregate tracked outcomes for the Performance page. Null when unavailable. */
 export async function getOutcomeStats(): Promise<OutcomeStats | null> {
   const supabase = await createClient();

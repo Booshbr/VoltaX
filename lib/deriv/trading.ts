@@ -93,6 +93,8 @@ export async function executeSignalOrder(
       guard: initialGuardState(),
       openPositions: 0,
       stake,
+      // The monetary stop-loss is the real money at risk on a multiplier contract.
+      riskAmount: stopLoss,
       minStake: 1,
       maxStake: Math.max(balance, 1),
       accountEquity: balance,

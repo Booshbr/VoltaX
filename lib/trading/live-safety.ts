@@ -35,8 +35,12 @@ export interface LiveExecutionContext {
     guard: RiskGuardState;
     /** Currently open live positions. */
     openPositions: number;
-    /** Proposed stake for this order, in account currency. */
+    /** Proposed stake (deposit) for this order, in account currency. */
     stake: number;
+    /** Money actually at risk on this order — the monetary stop-loss on the
+     * multiplier contract, which caps the loss well below the full stake. Daily
+     * and open-risk limits are measured against THIS, not the deposit. */
+    riskAmount: number;
     /** Instrument stake bounds from provider metadata. */
     minStake: number;
     maxStake: number;
@@ -123,7 +127,8 @@ export function evaluateLiveExecution(ctx: LiveExecutionContext): SafetyResult {
   // 7. Risk limits valid (per-trade, daily, open exposure, consecutive losses).
   const r = ctx.risk;
   const balanceOk = r.accountEquity > 0;
-  const perTradeFraction = balanceOk ? r.stake / r.accountEquity : Infinity;
+  // Risk is the money at stake (stop-loss), not the full multiplier deposit.
+  const perTradeFraction = balanceOk ? r.riskAmount / r.accountEquity : Infinity;
   const dailyOk = r.guard.dailyRiskUsed + perTradeFraction <= r.config.maxDailyRisk + 1e-9;
   const openRiskOk = r.guard.openRiskExposure + perTradeFraction <= r.config.maxOpenRisk + 1e-9;
   const lossesOk = r.guard.consecutiveLosses < r.config.maxConsecutiveLosses;
