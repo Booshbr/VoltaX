@@ -57,7 +57,8 @@
       "Bash(node -e \"const s=require\\('sharp'\\); s\\('app/icon.svg'\\).resize\\(192,192\\).png\\(\\).toBuffer\\(\\).then\\(b=>console.log\\('sharp OK bytes',b.length\\)\\).catch\\(e=>console.log\\('sharp FAIL',e.message\\)\\)\")",
       "Bash(mkdir -p public/icons)",
       "Bash(node -e ' *)",
-      "Bash(node -e \"const w=require\\('web-push'\\);const k=w.generateVAPIDKeys\\(\\);console.log\\('PUBLIC='+k.publicKey\\);console.log\\('PRIVATE='+k.privateKey\\)\")"
+      "Bash(node -e \"const w=require\\('web-push'\\);const k=w.generateVAPIDKeys\\(\\);console.log\\('PUBLIC='+k.publicKey\\);console.log\\('PRIVATE='+k.privateKey\\)\")",
+      "Bash(git commit -q -m ' *)"
     ]
   }
 }

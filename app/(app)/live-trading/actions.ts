@@ -19,6 +19,7 @@ import { getMarketDetail, getMarketView } from '@/lib/market/source';
 import type { Instrument } from '@/lib/types';
 import { classifyFamily } from '@/lib/config/families';
 import { getDerivAccountSummary } from '@/lib/deriv/account';
+import { closeLivePosition, closeAllLivePositions } from '@/lib/deriv/positions';
 
 export async function enableLiveAction(): Promise<{ state: LiveControllerState; error?: string }> {
   const account = await getDerivAccountSummary();
@@ -47,6 +48,29 @@ export async function emergencyStopAction(): Promise<LiveControllerState> {
 
 export async function clearEmergencyStopAction(): Promise<LiveControllerState> {
   await clearEmergencyStop();
+  revalidatePath('/live-trading');
+  return getLiveState();
+}
+
+/** Close one open Deriv contract at market. */
+export async function closePositionAction(contractId: number): Promise<{ ok: boolean; error?: string }> {
+  const res = await closeLivePosition(contractId);
+  revalidatePath('/live-trading');
+  return { ok: res.ok, error: res.error };
+}
+
+/** Kill-switch: halt trading (emergency stop) AND close every open position. */
+export async function killSwitchAction(): Promise<{ closed: number; failed: number }> {
+  await triggerEmergencyStop();
+  const result = await closeAllLivePositions();
+  revalidatePath('/live-trading');
+  return result;
+}
+
+/** Auto-disable live trading when the daily-loss guardrail is breached. Invoked by
+ * the client dashboard; the execution safety pipeline blocks trades regardless. */
+export async function enforceDailyLossGuardAction(): Promise<LiveControllerState> {
+  await disableLive();
   revalidatePath('/live-trading');
   return getLiveState();
 }

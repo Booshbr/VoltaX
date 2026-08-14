@@ -84,6 +84,48 @@ export interface DerivBalanceResponse {
   error?: DerivError;
 }
 
+/** portfolio: list of open contracts (subset). */
+export interface DerivPortfolioContract {
+  contract_id: number;
+  symbol?: string;
+  longcode?: string;
+  buy_price?: number;
+  purchase_time?: number;
+  contract_type?: string;
+  currency?: string;
+}
+export interface DerivPortfolioResponse {
+  portfolio?: { contracts?: DerivPortfolioContract[] };
+  error?: DerivError;
+}
+
+/** proposal_open_contract: live valuation of one open contract (subset). */
+export interface DerivOpenContractResponse {
+  proposal_open_contract?: {
+    contract_id: number;
+    profit?: number;
+    bid_price?: number;
+    buy_price?: number;
+    is_sold?: 0 | 1;
+    is_valid_to_sell?: 0 | 1;
+    underlying?: string;
+    longcode?: string;
+  };
+  error?: DerivError;
+}
+
+/** sell: close a contract at market (price 0 = any price). */
+export interface DerivSellResponse {
+  sell?: { contract_id: number; sold_for: number; balance_after: number; transaction_id: number };
+  error?: DerivError;
+}
+
+/** profit_table: closed transactions, used for realised daily P/L (subset). */
+export interface DerivProfitTableResponse {
+  profit_table?: { transactions?: Array<{ buy_price?: number; sell_price?: number; sell_time?: number }>; count?: number };
+  error?: DerivError;
+}
+
 /** Deriv candle granularities (seconds) accepted by ticks_history. */
 export const DERIV_GRANULARITY: Record<string, number> = {
   '1m': 60,
