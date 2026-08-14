@@ -60,50 +60,59 @@ function startOfUtcTodaySeconds(): number {
 export async function getLiveRiskSnapshot(): Promise<LiveRiskSnapshot> {
   if (!getDerivConfig().hasAccount) return { ...EMPTY, error: 'Configure DERIV_API_TOKEN and DERIV_ACCOUNT_ID.' };
 
+  // Bound each read so a slow provider can't blow the serverless time budget.
+  const READ_TIMEOUT_MS = 7000;
   let client: DerivAccountSocket | null = null;
   try {
     client = await DerivAccountSocket.open();
+    const c = client;
 
-    const balanceRes = await client.request<DerivBalanceResponse>({ balance: 1 });
+    // Balance, portfolio and today's statement run concurrently on the one socket
+    // (requests are multiplexed by req_id), instead of one slow round-trip at a time.
+    const [balanceRes, portfolio, table] = await Promise.all([
+      c.request<DerivBalanceResponse>({ balance: 1 }, READ_TIMEOUT_MS),
+      c.request<DerivPortfolioResponse>({ portfolio: 1 }, READ_TIMEOUT_MS),
+      c
+        .request<DerivProfitTableResponse>({ profit_table: 1, description: 0, date_from: startOfUtcTodaySeconds() }, READ_TIMEOUT_MS)
+        .catch(() => ({} as DerivProfitTableResponse)),
+    ]);
+
     const balance = balanceRes.balance?.balance ?? 0;
     const currency = balanceRes.balance?.currency ?? 'USD';
-
-    const portfolio = await client.request<DerivPortfolioResponse>({ portfolio: 1 });
     const contracts = portfolio.portfolio?.contracts ?? [];
 
+    // Value every open contract in parallel; skip any that fails.
+    const valued = await Promise.all(
+      contracts.map((contract) =>
+        c
+          .request<DerivOpenContractResponse>({ proposal_open_contract: 1, contract_id: contract.contract_id }, READ_TIMEOUT_MS)
+          .then((poc) => ({ contract, p: poc.proposal_open_contract }))
+          .catch(() => null),
+      ),
+    );
+
     const positions: LivePosition[] = [];
-    for (const c of contracts) {
-      try {
-        const poc = await client.request<DerivOpenContractResponse>({ proposal_open_contract: 1, contract_id: c.contract_id });
-        const p = poc.proposal_open_contract;
-        if (p?.is_sold) continue;
-        const buyPrice = p?.buy_price ?? c.buy_price ?? 0;
-        // Risk is capped by the stop-loss; without one, the full deposit is at risk.
-        const stopLossCap = p?.limit_order?.stop_loss?.order_amount;
-        positions.push({
-          contractId: c.contract_id,
-          symbol: c.symbol ?? p?.underlying ?? '—',
-          longcode: c.longcode ?? p?.longcode ?? '',
-          buyPrice,
-          riskAmount: typeof stopLossCap === 'number' && stopLossCap > 0 ? stopLossCap : buyPrice,
-          profit: p?.profit ?? 0,
-          isValidToSell: p?.is_valid_to_sell === 1,
-        });
-      } catch {
-        // Skip a contract we can't value rather than fail the whole snapshot.
-      }
+    for (const item of valued) {
+      if (!item || item.p?.is_sold) continue;
+      const { contract, p } = item;
+      const buyPrice = p?.buy_price ?? contract.buy_price ?? 0;
+      const stopLossCap = p?.limit_order?.stop_loss?.order_amount;
+      positions.push({
+        contractId: contract.contract_id,
+        symbol: contract.symbol ?? p?.underlying ?? '—',
+        longcode: contract.longcode ?? p?.longcode ?? '',
+        buyPrice,
+        riskAmount: typeof stopLossCap === 'number' && stopLossCap > 0 ? stopLossCap : buyPrice,
+        profit: p?.profit ?? 0,
+        isValidToSell: p?.is_valid_to_sell === 1,
+      });
     }
 
     let dailyRealizedPnl = 0;
-    try {
-      const table = await client.request<DerivProfitTableResponse>({ profit_table: 1, description: 0, date_from: startOfUtcTodaySeconds() });
-      for (const t of table.profit_table?.transactions ?? []) {
-        if (typeof t.sell_price === 'number' && typeof t.buy_price === 'number') {
-          dailyRealizedPnl += t.sell_price - t.buy_price;
-        }
+    for (const t of table.profit_table?.transactions ?? []) {
+      if (typeof t.sell_price === 'number' && typeof t.buy_price === 'number') {
+        dailyRealizedPnl += t.sell_price - t.buy_price;
       }
-    } catch {
-      // Realised P/L is best-effort; leave at 0 if the statement call fails.
     }
 
     return {

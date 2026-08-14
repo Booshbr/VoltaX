@@ -11,6 +11,9 @@ import { LiveRiskPanel } from '@/components/live/live-risk-panel';
 
 export const metadata = { title: 'Live Trading — VoltaX' };
 export const dynamic = 'force-dynamic';
+// Live market scan + Deriv account reads can take several seconds; give the
+// serverless render room so it never times out into an error page.
+export const maxDuration = 30;
 
 /** Live trading (spec §18, §42). Opt-in, multi-gated, with a prominent emergency
  * stop, live risk guardrails and open-position management. */

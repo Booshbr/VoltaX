@@ -8,6 +8,7 @@ import { evaluateGuardrails } from '@/lib/trading/guardrails';
 import { getUserRiskSettings } from '@/lib/supabase/repositories/settings';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 20;
 
 export async function GET() {
   const [snapshot, risk] = await Promise.all([getLiveRiskSnapshot(), getUserRiskSettings()]);
