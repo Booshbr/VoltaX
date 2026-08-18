@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { EngineEvaluation } from '@/lib/signals/engine';
 import { Card, Badge, ScoreBar } from './ui';
 import { DirectionBadge } from './domain';
-import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
+import { formatPrice, formatPercent, formatRR, titleCase, formatSymbolName } from '@/lib/utils/format';
 
 /** Reusable signal/opportunity card (spec §53). Shows the multi-timeframe read,
  * levels, reliability and opportunity score. Numbers are demo-data outputs. */
@@ -23,8 +23,8 @@ export function SignalCard({ evaluation }: { evaluation: EngineEvaluation }) {
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between">
         <div>
-          <div className="font-semibold text-fg">{e.instrumentSymbol}</div>
-          <div className="text-xs text-muted">{titleCase(e.family)} Indices</div>
+          <div className="font-semibold text-fg">{formatSymbolName(e.instrumentSymbol)}</div>
+          <div className="text-xs text-muted">{e.instrumentSymbol} · {titleCase(e.family)}</div>
         </div>
         <DirectionBadge direction={e.direction} />
       </div>

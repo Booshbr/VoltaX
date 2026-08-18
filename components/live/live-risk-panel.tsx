@@ -5,7 +5,7 @@ import type { LiveRiskSnapshot } from '@/lib/deriv/positions';
 import type { GuardrailState } from '@/lib/trading/guardrails';
 import { closePositionAction, killSwitchAction, enforceDailyLossGuardAction } from '@/app/(app)/live-trading/actions';
 import { Card, CardTitle } from '@/components/ui';
-import { formatMoney, formatPercent } from '@/lib/utils/format';
+import { formatMoney, formatPercent, formatSymbolName } from '@/lib/utils/format';
 
 /** Risk guardrail dashboard + live positions (spec §18, §20). Visualises exposure
  * and daily-loss vs. the conservative limits, auto-disables live on a daily-loss
@@ -158,7 +158,7 @@ function PositionRow({ position, currency }: { position: LiveRiskSnapshot['posit
   return (
     <tr className="border-b border-border/60 last:border-0">
       <td className="px-3 py-2">
-        <span className="font-medium text-fg">{position.symbol}</span>
+        <span className="font-medium text-fg">{formatSymbolName(position.symbol)}</span>
         <span className="ml-2 text-xs text-muted">#{position.contractId}</span>
         {error ? <span className="ml-2 text-xs text-bear">{error}</span> : null}
       </td>

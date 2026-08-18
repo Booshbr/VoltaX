@@ -11,7 +11,7 @@ import {
 import type { LiveControllerState } from '@/lib/trading/live-controller';
 import type { DerivAccountSummary } from '@/lib/deriv/account';
 import { Card, CardTitle, Badge, Dot } from '@/components/ui';
-import { formatPercent, formatRR } from '@/lib/utils/format';
+import { formatPercent, formatRR, formatSymbolName } from '@/lib/utils/format';
 
 export interface LiveSignal {
   symbol: string;
@@ -204,7 +204,7 @@ function ExecuteRow({ signal, liveEnabled }: { signal: LiveSignal; liveEnabled: 
     <li className="rounded-md border border-border bg-surface-2/40 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-fg">{signal.symbol}</span>
+          <span className="font-medium text-fg">{formatSymbolName(signal.symbol)}</span>
           <Badge tone={signal.direction === 'long' ? 'bull' : 'bear'}>
             {signal.direction === 'long' ? 'LONG' : 'SHORT'}
           </Badge>

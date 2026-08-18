@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { EngineEvaluation } from '@/lib/signals/engine';
 import { Badge } from './ui';
-import { titleCase, formatPercent, formatRR } from '@/lib/utils/format';
+import { titleCase, formatPercent, formatRR, formatSymbolName } from '@/lib/utils/format';
 
 type SortKey = 'opportunity' | 'reliability' | 'rr';
 type DirFilter = 'all' | 'long' | 'short';
@@ -70,7 +70,7 @@ export function RadarTable({ evaluations }: { evaluations: EngineEvaluation[] })
               <tr key={e.instrumentSymbol} className="border-b border-border/60 last:border-0 hover:bg-surface-2">
                 <td className="px-3 py-2">
                   <Link href={`/signals/${e.instrumentSymbol}`} className="font-medium text-accent hover:underline">
-                    {e.instrumentSymbol}
+                    {formatSymbolName(e.instrumentSymbol)}
                   </Link>
                 </td>
                 <td className="px-3 py-2 text-muted">{titleCase(e.family)}</td>

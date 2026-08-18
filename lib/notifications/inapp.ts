@@ -1,5 +1,6 @@
 /** Pure qualified-signal notification builders. */
 import type { AppNotification } from './index';
+import { formatSymbolName } from '@/lib/utils/format';
 
 export interface StoredNotification extends AppNotification {
   id: string;
@@ -48,7 +49,7 @@ export function buildQualifiedNotification(s: QualifiedSignalInput): { key: stri
     key: `qualified:${s.symbol}:${s.direction}`,
     notification: {
       kind: 'qualified_signal',
-      title: `📈 Qualified signal — ${s.symbol}`,
+      title: `📈 Qualified signal — ${formatSymbolName(s.symbol)}`,
       url: signalUrl(s.symbol),
       body: [
         direction,

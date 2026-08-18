@@ -4,7 +4,7 @@ import { Card, CardTitle, Badge, Stat } from '@/components/ui';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { listSignals } from '@/lib/supabase/repositories/signals';
 import { getSignalLog, type OutcomeLogRow } from '@/lib/supabase/repositories/outcomes';
-import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
+import { formatPrice, formatPercent, formatRR, titleCase, formatSymbolName } from '@/lib/utils/format';
 import { HistoryFilters } from '@/components/history-filters';
 
 export const metadata = { title: 'History — VoltaX' };
@@ -89,7 +89,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                     {stats.symbols.filter((s) => s.decided > 0).map((s) => (
                       <tr key={s.symbol} className="border-b border-border/60 last:border-0">
                         <td className="px-3 py-2 font-medium text-fg">
-                          {s.symbol}
+                          {formatSymbolName(s.symbol)}
                           {s.decided < 20 ? <span className="ml-2 text-[10px] font-normal text-muted">small sample</span> : null}
                         </td>
                         <td className="tnum px-3 py-2 text-right">{s.decided}</td>
@@ -129,7 +129,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                 {logRows.slice(0, 200).map((r, i) => (
                   <tr key={`${r.symbol}-${r.createdAt}-${i}`} className="border-b border-border/60 last:border-0">
                     <td className="px-3 py-2">
-                      <Link href={`/signals/${r.symbol}`} className="font-medium text-accent hover:underline">{r.symbol}</Link>
+                      <Link href={`/signals/${r.symbol}`} className="font-medium text-accent hover:underline">{formatSymbolName(r.symbol)}</Link>
                     </td>
                     <td className="px-3 py-2">
                       <Badge tone={r.direction === 'long' ? 'bull' : 'bear'}>{r.direction === 'long' ? 'LONG' : 'SHORT'}</Badge>
@@ -187,7 +187,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                   <tr key={s.id} className="border-b border-border/60 last:border-0">
                     <td className="px-3 py-2">
                       <Link href={`/signals/${s.instrument_symbol}`} className="font-medium text-accent hover:underline">
-                        {s.instrument_symbol}
+                        {formatSymbolName(s.instrument_symbol)}
                       </Link>
                     </td>
                     <td className="px-3 py-2">

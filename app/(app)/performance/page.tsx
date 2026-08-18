@@ -4,7 +4,7 @@ import { getDailyPnlHistory } from '@/lib/deriv/positions';
 import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Stat } from '@/components/ui';
 import { DailyPnlChart } from '@/components/live/daily-pnl-chart';
-import { formatPercent, titleCase } from '@/lib/utils/format';
+import { formatPercent, titleCase, formatSymbolName } from '@/lib/utils/format';
 
 export const metadata = { title: 'Performance — VoltaX' };
 export const dynamic = 'force-dynamic';
@@ -110,7 +110,7 @@ export default async function PerformancePage() {
             <tbody>
               {perf.rows.map((r) => (
                 <tr key={r.symbol} className="border-b border-border/60 last:border-0">
-                  <td className="px-3 py-2 font-medium text-fg">{r.symbol}</td>
+                  <td className="px-3 py-2 font-medium text-fg">{formatSymbolName(r.symbol)}</td>
                   <td className="px-3 py-2 text-muted">{titleCase(r.family)}</td>
                   <td className="tnum px-3 py-2 text-right">{r.trades}</td>
                   <td className="tnum px-3 py-2 text-right">{r.winRate !== null ? formatPercent(r.winRate * 100) : '—'}</td>

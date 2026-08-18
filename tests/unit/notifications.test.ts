@@ -20,7 +20,7 @@ describe('buildQualifiedNotification', () => {
     const { key, notification } = buildQualifiedNotification(sig());
     expect(key).toBe('qualified:R_75:long');
     expect(notification.kind).toBe('qualified_signal');
-    expect(notification.title).toContain('R_75');
+    expect(notification.title).toContain('Volatility 75 Index');
     expect(notification.body).toMatch(/BUY/);
     expect(notification.body).toMatch(/82%/);
     expect(notification.body).toMatch(/Entry: 52,000/);

@@ -39,3 +39,30 @@ export function timeAgo(iso: string, now = Date.now()): string {
 export function titleCase(s: string): string {
   return s.replace(/(^|[\s-])\w/g, (c) => c.toUpperCase()).replace(/-/g, ' ');
 }
+
+/**
+ * Human-readable Deriv synthetic-index name from its provider code, e.g.
+ * `R_75` → "Volatility 75 Index", `1HZ75V` → "Volatility 75 (1s) Index",
+ * `BOOM1000` → "Boom 1000 Index". Unknown codes are returned unchanged.
+ */
+export function formatSymbolName(symbol: string): string {
+  if (!symbol) return symbol;
+  const s = symbol.trim();
+  let m: RegExpExecArray | null;
+  if ((m = /^R_(\d+)$/i.exec(s))) return `Volatility ${m[1]} Index`;
+  if ((m = /^1HZ(\d+)V$/i.exec(s))) return `Volatility ${m[1]} (1s) Index`;
+  if ((m = /^BOOM(\d+)N?$/i.exec(s))) return `Boom ${m[1]} Index`;
+  if ((m = /^CRASH(\d+)N?$/i.exec(s))) return `Crash ${m[1]} Index`;
+  if ((m = /^JD(\d+)$/i.exec(s))) return `Jump ${m[1]} Index`;
+  if (/^stpRNG$/i.test(s)) return 'Step Index';
+  if (/^RDBULL$/i.test(s)) return 'Bull Market Index';
+  if (/^RDBEAR$/i.test(s)) return 'Bear Market Index';
+  return s;
+}
+
+/** Full name with the raw code appended, e.g. "Volatility 75 Index (R_75)".
+ * Returns just the name when it has no mapping (name === code). */
+export function formatSymbolLong(symbol: string): string {
+  const name = formatSymbolName(symbol);
+  return name === symbol ? symbol : `${name} (${symbol})`;
+}

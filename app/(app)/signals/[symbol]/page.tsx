@@ -11,7 +11,7 @@ import { AiExplanation } from '@/components/ai-explanation';
 import { SaveSignalButton } from '@/components/save-signal-button';
 import { explainSignal, isAiConfigured } from '@/lib/ai/explain';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
-import { formatPrice, formatPercent, formatRR, titleCase } from '@/lib/utils/format';
+import { formatPrice, formatPercent, formatRR, titleCase, formatSymbolName } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,8 +54,8 @@ export default async function SignalDetailPage({
   return (
     <>
       <PageHeader
-        title={e.instrumentSymbol}
-        subtitle={`${titleCase(e.family)} Indices · methodology ${e.methodologyVersion}`}
+        title={formatSymbolName(e.instrumentSymbol)}
+        subtitle={`${e.instrumentSymbol} · ${titleCase(e.family)} · methodology ${e.methodologyVersion}`}
         actions={
           <div className="flex items-center gap-2">
             <SourceBadge source={source} />

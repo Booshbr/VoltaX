@@ -7,7 +7,7 @@ import { NotificationSync } from '@/components/notifications/notification-sync';
 import { ExposureWidget } from '@/components/dashboard/exposure-widget';
 import type { QualifiedSignalInput } from '@/lib/notifications/inapp';
 import { dispatchQualifiedAlerts } from '@/lib/notifications/dispatch';
-import { formatMoney, formatPercent, titleCase } from '@/lib/utils/format';
+import { formatMoney, formatPercent, titleCase, formatSymbolName } from '@/lib/utils/format';
 import { recordQualifiedSignals } from '@/lib/supabase/repositories/signals';
 import { recordPendingOutcomes, type OutcomeSeed } from '@/lib/supabase/repositories/outcomes';
 import { getDerivAccountSummary } from '@/lib/deriv/account';
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">Leading opportunity</p>
-              <h2 className="mt-2 text-xl font-extrabold tracking-[-0.04em] text-fg">{lead?.instrumentSymbol ?? 'No market available'}</h2>
+              <h2 className="mt-2 text-xl font-extrabold tracking-[-0.04em] text-fg">{lead ? formatSymbolName(lead.instrumentSymbol) : 'No market available'}</h2>
             </div>
             <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent">{lead ? titleCase(lead.status) : 'Waiting'}</span>
           </div>
