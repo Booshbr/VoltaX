@@ -56,9 +56,10 @@ describe('resolveOutcome', () => {
 });
 
 describe('aggregateOutcomes', () => {
-  const rec = (status: OutcomeRecord['status'], family = 'volatility'): OutcomeRecord & { status: typeof status } => ({
+  const rec = (status: OutcomeRecord['status'], family = 'volatility', symbol = 'R_100'): OutcomeRecord & { status: typeof status } => ({
     status,
     family,
+    symbol,
     entry: 100,
     stopLoss: 95,
     takeProfit: 110, // reward:risk = 10/5 = 2R on a win
@@ -90,6 +91,17 @@ describe('aggregateOutcomes', () => {
     const boom = stats.families.find((f) => f.family === 'boom');
     expect(boom?.decided).toBe(2);
     expect(boom?.wins).toBe(1);
+  });
+
+  it('splits stats per market and sorts by expectancy (best first)', () => {
+    const stats = aggregateOutcomes([
+      rec('loss', 'boom', 'BOOM300N'),
+      rec('loss', 'boom', 'BOOM300N'),
+      rec('win', 'volatility', 'R_100'),
+      rec('win', 'volatility', 'R_100'),
+    ]);
+    expect(stats.symbols.map((s) => s.symbol)).toEqual(['R_100', 'BOOM300N']);
+    expect(stats.symbols[0]!.expectancyR).toBeGreaterThan(stats.symbols[1]!.expectancyR);
   });
 
   it('returns null rates when nothing is decided', () => {

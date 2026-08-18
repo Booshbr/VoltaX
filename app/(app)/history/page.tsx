@@ -71,6 +71,46 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
             <Stat label="Reliability" value={stats.wilsonLower !== null ? formatPercent(stats.wilsonLower * 100) : '—'} />
             <Stat label="Expectancy" value={`${stats.expectancyR >= 0 ? '+' : ''}${stats.expectancyR.toFixed(2)}R`} tone={stats.expectancyR >= 0 ? 'bull' : 'bear'} />
           </div>
+          {stats.symbols.filter((s) => s.decided > 0).length > 1 ? (
+            <div className="mt-5">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted">By market — where the edge is</p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                      <th className="px-3 py-2 font-medium">Market</th>
+                      <th className="px-3 py-2 text-right font-medium">Decided</th>
+                      <th className="px-3 py-2 text-right font-medium">Win rate</th>
+                      <th className="px-3 py-2 text-right font-medium">Reliability</th>
+                      <th className="px-3 py-2 text-right font-medium">Expectancy</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.symbols.filter((s) => s.decided > 0).map((s) => (
+                      <tr key={s.symbol} className="border-b border-border/60 last:border-0">
+                        <td className="px-3 py-2 font-medium text-fg">
+                          {s.symbol}
+                          {s.decided < 20 ? <span className="ml-2 text-[10px] font-normal text-muted">small sample</span> : null}
+                        </td>
+                        <td className="tnum px-3 py-2 text-right">{s.decided}</td>
+                        <td className="tnum px-3 py-2 text-right">{s.winRate !== null ? formatPercent(s.winRate * 100) : '—'}</td>
+                        <td className="tnum px-3 py-2 text-right text-muted">{s.wilsonLower !== null ? formatPercent(s.wilsonLower * 100) : '—'}</td>
+                        <td className={`tnum px-3 py-2 text-right font-semibold ${s.expectancyR >= 0 ? 'text-bull' : 'text-bear'}`}>
+                          {s.expectancyR >= 0 ? '+' : ''}{s.expectancyR.toFixed(2)}R
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-muted">
+                Sorted best-first by expectancy. Markets with <span className="text-bear">negative expectancy</span> are candidates to
+                filter out; markets under ~20 decided signals are not yet statistically conclusive. Use the Backtesting page to validate
+                any rule change before trusting it.
+              </p>
+            </div>
+          ) : null}
+
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>

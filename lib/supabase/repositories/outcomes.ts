@@ -186,7 +186,7 @@ export async function getSignalLog(cutoffIso: string | null, limit = 500): Promi
     createdAt: r.created_at,
     resolvedAt: r.resolved_at,
   }));
-  const stats = aggregateOutcomes(rows.map((r) => ({ status: r.status, family: r.family, entry: r.entry, stopLoss: r.stopLoss, takeProfit: r.takeProfit })));
+  const stats = aggregateOutcomes(rows.map((r) => ({ status: r.status, family: r.family, symbol: r.symbol, entry: r.entry, stopLoss: r.stopLoss, takeProfit: r.takeProfit })));
   return { rows, stats };
 }
 
@@ -196,13 +196,14 @@ export async function getOutcomeStats(): Promise<OutcomeStats | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('signal_outcomes')
-    .select('status, family, entry, stop_loss, take_profit')
+    .select('status, family, symbol, entry, stop_loss, take_profit')
     .limit(5000);
   if (error || !data) return null;
   return aggregateOutcomes(
     data.map((r) => ({
       status: r.status,
       family: r.family,
+      symbol: r.symbol,
       entry: r.entry,
       stopLoss: r.stop_loss,
       takeProfit: r.take_profit,

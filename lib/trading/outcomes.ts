@@ -70,6 +70,7 @@ export function resolveOutcome(signal: OpenSignal, candles: Candle[], opts: Reso
 export interface OutcomeRecord {
   status: OutcomeStatus;
   family: string;
+  symbol: string;
   entry: number;
   stopLoss: number;
   takeProfit: number;
@@ -93,6 +94,8 @@ export interface OutcomeStats extends OutcomeStat {
   total: number;
   pending: number;
   families: Array<{ family: string } & OutcomeStat>;
+  /** Per-market breakdown — the evidence for which symbols carry a real edge. */
+  symbols: Array<{ symbol: string } & OutcomeStat>;
 }
 
 /** Realised R for a resolved record. Wins earn the target's reward-per-risk. */
@@ -123,22 +126,32 @@ function statFor(records: OutcomeRecord[]): OutcomeStat {
   };
 }
 
-/** Aggregate resolved+pending outcome rows into overall and per-family stats. */
+function groupBy(records: OutcomeRecord[], key: (r: OutcomeRecord) => string): Map<string, OutcomeRecord[]> {
+  const groups = new Map<string, OutcomeRecord[]>();
+  for (const r of records) {
+    const k = key(r);
+    const list = groups.get(k) ?? [];
+    list.push(r);
+    groups.set(k, list);
+  }
+  return groups;
+}
+
+/** Aggregate resolved+pending outcome rows into overall, per-family and per-symbol stats. */
 export function aggregateOutcomes(rows: Array<OutcomeRecord & { status: OutcomeStatus }>): OutcomeStats {
   const resolved = rows.filter((r) => r.status !== 'pending');
   const overall = statFor(resolved);
-  const families = new Map<string, OutcomeRecord[]>();
-  for (const r of resolved) {
-    const list = families.get(r.family) ?? [];
-    list.push(r);
-    families.set(r.family, list);
-  }
   return {
     ...overall,
     total: rows.length,
     pending: rows.filter((r) => r.status === 'pending').length,
-    families: [...families.entries()]
+    families: [...groupBy(resolved, (r) => r.family).entries()]
       .map(([family, list]) => ({ family, ...statFor(list) }))
       .sort((a, b) => b.decided - a.decided),
+    // Sorted by expectancy so the strongest markets sit on top and the ones to
+    // filter out fall to the bottom.
+    symbols: [...groupBy(resolved, (r) => r.symbol).entries()]
+      .map(([symbol, list]) => ({ symbol, ...statFor(list) }))
+      .sort((a, b) => b.expectancyR - a.expectancyR),
   };
 }
