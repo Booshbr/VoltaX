@@ -14,6 +14,27 @@ export default async function PerformancePage() {
   const t = perf.totals;
   const hasDailyPnl = dailyPnl.some((d) => d.pnl !== 0);
 
+  // Roll the per-instrument backtest up to families, so Boom vs Volatility edge is
+  // directly comparable (trade-weighted expectancy). This is the evidence for
+  // whether a family deserves to be traded — or filtered out.
+  const familyRollup = Object.values(
+    perf.rows.reduce<Record<string, { family: string; trades: number; wins: number; losses: number; sumR: number }>>((acc, r) => {
+      const f = (acc[r.family] ??= { family: r.family, trades: 0, wins: 0, losses: 0, sumR: 0 });
+      f.trades += r.trades;
+      f.wins += r.wins;
+      f.losses += r.losses;
+      f.sumR += r.expectancyR * r.trades;
+      return acc;
+    }, {}),
+  )
+    .map((f) => ({
+      family: f.family,
+      trades: f.trades,
+      winRate: f.wins + f.losses > 0 ? f.wins / (f.wins + f.losses) : null,
+      expectancyR: f.trades > 0 ? f.sumR / f.trades : 0,
+    }))
+    .sort((a, b) => b.expectancyR - a.expectancyR);
+
   return (
     <>
       <PageHeader
@@ -93,6 +114,40 @@ export default async function PerformancePage() {
         <Card><Stat label="Expectancy" value={`${t.expectancyR >= 0 ? '+' : ''}${t.expectancyR.toFixed(2)}R`} tone={t.expectancyR >= 0 ? 'bull' : 'bear'} /></Card>
         <Card><Stat label="Profit factor" value={t.profitFactor !== null ? t.profitFactor.toFixed(2) : '—'} tone="accent" /></Card>
       </div>
+
+      {familyRollup.length > 1 ? (
+        <Card className="mt-6">
+          <CardTitle hint="Backtest, trade-weighted — where the family edge is">By family</CardTitle>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="px-3 py-2 font-medium">Family</th>
+                  <th className="px-3 py-2 text-right font-medium">Trades</th>
+                  <th className="px-3 py-2 text-right font-medium">Win rate</th>
+                  <th className="px-3 py-2 text-right font-medium">Expectancy</th>
+                </tr>
+              </thead>
+              <tbody>
+                {familyRollup.map((f) => (
+                  <tr key={f.family} className="border-b border-border/60 last:border-0">
+                    <td className="px-3 py-2 font-medium text-fg">{titleCase(f.family)}</td>
+                    <td className="tnum px-3 py-2 text-right">{f.trades}{f.trades < 30 ? <span className="ml-2 text-[10px] text-muted">small</span> : null}</td>
+                    <td className="tnum px-3 py-2 text-right">{f.winRate !== null ? formatPercent(f.winRate * 100) : '—'}</td>
+                    <td className={`tnum px-3 py-2 text-right font-semibold ${f.expectancyR >= 0 ? 'text-bull' : 'text-bear'}`}>
+                      {f.expectancyR >= 0 ? '+' : ''}{f.expectancyR.toFixed(2)}R
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-muted">
+            Backtested on the look-ahead-safe engine over the available history. Families with <span className="text-bear">negative
+            expectancy</span> are candidates to de-emphasise or filter; small samples (&lt;30 trades) are indicative, not conclusive.
+          </p>
+        </Card>
+      ) : null}
 
       <Card className="mt-6">
         <CardTitle hint="By instrument">Breakdown</CardTitle>
