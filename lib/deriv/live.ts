@@ -18,9 +18,15 @@ import { KNOWN_SYNTHETICS } from './symbols';
 import { classifyFamily } from '@/lib/config/families';
 import { summarize, type MarketDetail, type MarketView } from '@/lib/market/types';
 
-const CANDLE_COUNT = 300;
-const FETCH_CONCURRENCY = 3;
-const CACHE_TTL_MS = 60_000;
+// Deeper history → more backtest trades per symbol → tighter reliability scores
+// (the engine derives each signal's reliability from this backtest's win/loss).
+// 900 five-minute candles ≈ 3 days; ~3x the trades of the old 300. Bounded by
+// Deriv's ticks_history cap (5000) and the serverless build budget below.
+const CANDLE_COUNT = 900;
+const FETCH_CONCURRENCY = 4;
+// Backtest stats are stable over minutes; refresh less often than the 60s live
+// tick so the heavier build isn't paid on every request.
+const CACHE_TTL_MS = 180_000;
 const EQUITY = 10_000;
 
 interface LiveInstrumentData {

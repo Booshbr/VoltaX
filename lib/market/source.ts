@@ -60,7 +60,9 @@ export interface Performance {
   };
 }
 
-const LIVE_TIMEOUT_MS = 15_000;
+// Allow headroom for the deeper backtest build (see CANDLE_COUNT). The build is
+// cached and shared across concurrent callers, so this is paid rarely.
+const LIVE_TIMEOUT_MS = 25_000;
 
 function liveEnabled(): boolean {
   const pref = process.env.VOLTAX_DATA_SOURCE;
