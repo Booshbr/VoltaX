@@ -138,6 +138,14 @@ async function getLive(): Promise<LiveCache> {
   return inflight;
 }
 
+/** Per-symbol multi-timeframe candle sets from the live cache — for the optimizer. */
+export async function getLiveUniverseCandles(): Promise<
+  Array<{ instrument: Instrument; candles: Partial<Record<Timeframe, Candle[]>> }>
+> {
+  const { data } = await getLive();
+  return data.map((d) => ({ instrument: d.instrument, candles: d.candles }));
+}
+
 export async function getLiveMarketView(): Promise<MarketView> {
   return (await getLive()).view;
 }

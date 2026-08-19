@@ -2,7 +2,8 @@ import { getPerformance } from '@/lib/market/source';
 import { PageHeader, Disclaimer, SourceBadge } from '@/components/page';
 import { Card, CardTitle, Badge } from '@/components/ui';
 import { METHODOLOGY_VERSION } from '@/lib/config/strategy';
-import { formatPercent, titleCase } from '@/lib/utils/format';
+import { formatPercent, titleCase, formatSymbolName } from '@/lib/utils/format';
+import { OptimizerPanel } from '@/components/backtesting/optimizer-panel';
 
 export const metadata = { title: 'Backtesting — VoltaX' };
 export const dynamic = 'force-dynamic';
@@ -48,7 +49,7 @@ export default async function BacktestingPage() {
             <tbody>
               {perf.rows.map((r) => (
                 <tr key={r.symbol} className="border-b border-border/60 last:border-0">
-                  <td className="px-3 py-2 font-medium text-fg">{r.symbol}</td>
+                  <td className="px-3 py-2 font-medium text-fg">{formatSymbolName(r.symbol)}</td>
                   <td className="px-3 py-2 text-muted">{titleCase(r.family)}</td>
                   <td className="tnum px-3 py-2 text-right">{r.trades}</td>
                   <td className="tnum px-3 py-2 text-right text-bull">{r.wins}</td>
@@ -63,6 +64,8 @@ export default async function BacktestingPage() {
         </div>
         <Disclaimer />
       </Card>
+
+      <OptimizerPanel />
     </>
   );
 }
