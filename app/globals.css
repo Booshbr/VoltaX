@@ -3,35 +3,36 @@
 @tailwind utilities;
 
 /*
- * VoltaX enterprise-fintech design tokens. HSL channels are consumed by
- * Tailwind through tailwind.config.ts. The default is a calm, high-clarity
- * workspace; dark mode preserves the same hierarchy rather than inverting it.
+ * VoltaX design tokens — TradingView-inspired terminal palette. HSL channels are
+ * consumed by Tailwind through tailwind.config.ts. Light is the default, high-
+ * clarity workspace; dark is the classic #131722 terminal. The theme toggle in the
+ * top bar swaps .light / .dark (persisted in localStorage).
  */
 :root,
 .light {
-  --bg: 252 20% 96%;
+  --bg: 220 23% 97%;
   --surface: 0 0% 100%;
-  --surface-2: 250 25% 97%;
-  --border: 240 16% 88%;
-  --fg: 222 27% 13%;
-  --muted: 218 13% 38%;
-  --accent: 256 61% 44%;
-  --bull: 142 81% 31%;
-  --bear: 5 92% 47%;
-  --warn: 36 93% 40%;
+  --surface-2: 220 20% 98%;
+  --border: 220 16% 90%;
+  --fg: 224 28% 14%;
+  --muted: 222 9% 42%;
+  --accent: 224 100% 55%; /* TradingView blue #2962FF */
+  --bull: 168 66% 33%; /* teal-green, darkened for white-panel contrast */
+  --bear: 4 74% 53%; /* red #ef5350 family */
+  --warn: 33 92% 45%;
 }
 
 .dark {
-  --bg: 228 25% 8%;
-  --surface: 228 22% 12%;
-  --surface-2: 226 19% 16%;
-  --border: 224 14% 23%;
-  --fg: 240 20% 96%;
-  --muted: 222 12% 66%;
-  --accent: 258 85% 73%;
-  --bull: 151 64% 51%;
-  --bear: 5 86% 67%;
-  --warn: 40 95% 62%;
+  --bg: 224 28% 10%; /* #131722 */
+  --surface: 223 22% 14%; /* #1e222d panels */
+  --surface-2: 223 18% 18%;
+  --border: 224 14% 22%; /* #2a2e39 */
+  --fg: 225 18% 90%; /* #d1d4dc */
+  --muted: 228 7% 58%; /* #787b86 */
+  --accent: 217 100% 62%; /* brighter blue for dark */
+  --bull: 168 60% 45%; /* #26a69a */
+  --bear: 2 82% 66%; /* #ef5350 */
+  --warn: 38 95% 58%;
 }
 
 * {
@@ -40,9 +41,8 @@
 
 body {
   min-height: 100dvh;
-  background:
-    radial-gradient(circle at 100% 0%, hsl(var(--accent) / 0.06), transparent 24rem),
-    hsl(var(--bg));
+  /* Flat, terminal-clean background — no accent glow. */
+  background: hsl(var(--bg));
   color: hsl(var(--fg));
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';

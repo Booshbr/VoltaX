@@ -73,8 +73,8 @@ export default async function DashboardPage() {
       </div>
 
       <section className="grid gap-4 xl:grid-cols-[1.45fr_0.9fr]">
-        <div className="relative overflow-hidden rounded-[1.5rem] bg-fg p-6 text-surface shadow-[0_18px_40px_hsl(var(--fg)/0.16)] md:p-7">
-          <div className="absolute -right-12 -top-12 h-56 w-56 rounded-full bg-accent/35 blur-3xl" aria-hidden />
+        <div className="relative overflow-hidden rounded-xl bg-fg p-6 text-surface shadow-[0_1px_2px_hsl(var(--fg)/0.2)] md:p-7">
+          <div className="absolute -right-12 -top-12 h-56 w-56 rounded-full bg-accent/25 blur-3xl" aria-hidden />
           <div className="relative">
             <div className="flex items-start justify-between gap-3">
               <div>
